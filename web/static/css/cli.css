@@ -1,0 +1,36 @@
+#container {
+    min-height: 100vh;
+    width: 100%;
+}
+#cli_wrapper {
+    min-width: 100%;
+    background-color: black;
+    position: relative;
+    width: max-content;
+}
+.page{
+    min-height: 100vh;
+    width: 100%;
+}
+.CodeMirror {
+    min-height: 100vh;
+    width: 100%;
+}
+.cli_placeholder {
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    pointer-events: none;
+    opacity: .5;
+    color: green;
+}
+
+#cli_wrapper:placeholder-shown + .cli_placeholder {
+    opacity: 0;
+}
+.consolas {
+    font-family: 'Consolas';
+    font-size: 1rem;
+    overflow-x: hidden;
+    width: 100%;
+}
