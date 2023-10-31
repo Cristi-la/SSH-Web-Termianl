@@ -53,10 +53,30 @@ class SshConsumer(AsyncWebsocketConsumer):
             loop = asyncio.get_running_loop()
             stdin, stdout, stderr = await loop.run_in_executor(None, self.ssh.exec_command, command)
 
-            output = stdout.read().decode('utf-8').strip()
-            error = stderr.read().decode('utf-8').strip()
+            complete_output = ""
 
-            await self.send(text_data=json.dumps({'output': output, 'error': error}))
+            while not stdout.channel.exit_status_ready():
+
+                while stdout.channel.recv_ready():
+                    line = stdout.readline()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
+                    complete_output += line
+                    await self.send(
+                        text_data=json.dumps({'output': line}))
+                await asyncio.sleep(0.1)
+
+            output_remaining = stdout.read()
+            if isinstance(output_remaining, bytes):
+                output_remaining = output_remaining.decode('utf-8').strip()
+            complete_output += output_remaining
+
+            error = stderr.read()
+            if isinstance(error, bytes):
+                error = error.decode('utf-8').strip()
+
+            await self.send(text_data=json.dumps({'output': complete_output, 'error': error}))
+
         except Exception as e:
             await self.send(text_data=json.dumps({'error': str(e)}))
 
