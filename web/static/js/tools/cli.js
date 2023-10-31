@@ -1,11 +1,13 @@
 const commands = [
     {
         alias: 'help',
-        action: () => {}
+        action: () => {
+        }
     },
     {
         alias: 'jhfh',
-        action: () => {},
+        action: () => {
+        },
         tree: [
             {
                 alias: 'help',
@@ -58,7 +60,7 @@ function updateHint(cli, hint) {
     let currentlevel = 0
     let currentCommands = commands;
     let hints = []
-    
+
     while (true) {
         currentPart = parts[currentlevel];
         currentCommands = findMatchingCommands(currentPart, currentCommands);
@@ -70,8 +72,8 @@ function updateHint(cli, hint) {
             matchedHint = currentCommands.map(command => command.alias)
             matchedHintText = matchedHint.join("|")
             hints.push(`[${matchedHintText}]`);
-        } else { 
-            hints.push(currentCommands[0].alias); 
+        } else {
+            hints.push(currentCommands[0].alias);
         }
 
         // console.log("lvl", currentlevel)
@@ -81,8 +83,8 @@ function updateHint(cli, hint) {
         // console.log("hints", hints)
         // console.log('----')
 
-        if (currentCommands.length > 1 || 
-            (currentCommands.length === 1 && 
+        if (currentCommands.length > 1 ||
+            (currentCommands.length === 1 &&
                 (currentCommands[0].alias.toLowerCase() !== currentPart) || !currentCommands[0].tree)) break;
 
         currentCommands = currentCommands[0].tree
@@ -96,21 +98,17 @@ function findMatchingCommands(part, currentCommands) {
     if (!part) return currentCommands
 
     let matchingCommands = [];
-    
+
     for (const command of currentCommands) {
-        if (command.alias.toLowerCase() === part ) {
+        if (command.alias.toLowerCase() === part) {
             return [command]
-        }
-        else if (command.alias.toLowerCase().startsWith(part)) {
+        } else if (command.alias.toLowerCase().startsWith(part)) {
             matchingCommands.push(command);
         }
     }
-    
+
     return matchingCommands;
 }
-
-
-
 
 
 //  Tab button functionality
@@ -123,32 +121,32 @@ const comboOptionRegex = /[\[\]]/;
 
 function convertComboOptions(element) {
     return element
-            .replace("[", "") // Remove the opening bracket
-            .replace("]", "") // Remove the closing bracket
-            .split("|") // Split by comma and space
-            .filter(Boolean);
+        .replace("[", "") // Remove the opening bracket
+        .replace("]", "") // Remove the closing bracket
+        .split("|") // Split by comma and space
+        .filter(Boolean);
 }
 
-function getComboOptions(currentHintChoiceText){
+function getComboOptions(currentHintChoiceText) {
     let currentHintChoice = currentHintChoiceText.split(/\s+/)
 
     if (!currentHintChoice.length) return []
 
     if (!comboOptionRegex.test(currentHintChoiceText)) return [currentHintChoice[-1]]
 
-    console.log("currentHintChoice",currentHintChoice[currentHintChoice.length -1])
-    return convertComboOptions(currentHintChoice[currentHintChoice.length -1])
+    console.log("currentHintChoice", currentHintChoice[currentHintChoice.length - 1])
+    return convertComboOptions(currentHintChoice[currentHintChoice.length - 1])
 }
 
 
-function resetSavedComboOption(cli, hint){
+function resetSavedComboOption(cli, hint) {
     savedComboOptions = []
     comboOptionIndex = 0
     savedValueText = ''
     updateHint(cli, hint)
 }
 
-  
+
 function cliTabPressUpdate(cli, hint) {
     let currentHintChoiceText = hint.textContent
     let currentValueText = cli.value
@@ -159,7 +157,7 @@ function cliTabPressUpdate(cli, hint) {
         resetSavedComboOption(cli, hint)
         // no hint to tabulate
         if (currentValueText.length > currentHintChoiceText.length) return
-    } 
+    }
     // else if (currentValueText.length > currentHintChoiceText.length) return    
 
     // get combo options
@@ -167,9 +165,9 @@ function cliTabPressUpdate(cli, hint) {
         comboOptions = getComboOptions(currentHintChoiceText)
         savedComboOptions = comboOptions
         savedValueText = currentValueText
-    } else comboOptions = savedComboOptions 
+    } else comboOptions = savedComboOptions
 
-    
+
     // no combo options
     if (!comboOptions.length) return
 
@@ -193,10 +191,40 @@ function cliTabPressUpdate(cli, hint) {
 
     console.log("comboOptionIndex", comboOptionIndex)
     console.log("interuptedComboOptions", interuptedComboOptions)
-    console.log("comboOptions",comboOptions)
-    
+    console.log("comboOptions", comboOptions)
+
 }
 
+function sshConnect(input) {
+    const parts = input.split(" ");
+    if (parts.length === 4) {
+        const commandData = {
+            command: "ssh_connect",
+            host: parts[1],
+            username: parts[2],
+            password: parts[3]
+        };
+        sshServerSocket.send(JSON.stringify(commandData));
+    } else {
+        alert("Invalid SSH command format. Expected format: 'ssh [host] [username] [password]'");
+    }
+}
 
+function executeSSHCommand(command) {
+    if (command) {
+        sshServerSocket.send(JSON.stringify({
+            command: "execute_ssh_command",
+            commandText: command
+        }));
+    }
+}
 
-
+function processSSHResponse(response) {
+    let output = response.output || "";
+    let error = response.error || "";
+    if (output || error) {
+        let textToAppend = "\n" + (output || "Error: " + error) + "\n";
+        cm.replaceRange(textToAppend, { line: cm.lineCount(), ch: 0 });
+        cm.scrollIntoView({ line: cm.lineCount() - 1 });
+    }
+}
