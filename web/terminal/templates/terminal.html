@@ -3,15 +3,53 @@
 {% block content %}
 
 
-<header>
-    <div id="cli_wrapper">
-        <div id="cli_hint" class="cli_placeholder consolas"></div>
-        <input id="cli" type="text" class="consolas">
-        
+<div class="container-fluid">
+    <div class="col-12">
+        <header class="row">
+            <div class="col-11 p-1 flex-grow-1">
+                <div id="wrapper">
+                    <div class="position-relative">
+                        <input  id="cli" type="text" class=" form-input" placeholder="help" autocomplete="off">
+                        <label for="cli" id="cli_hint" class="position-absolute form-label"></label>
+                        <label id="cli_shortcut" class="position-absolute form-kbd">Ctrl K</label>
+                    </div>
+                    <nav id="tabs" class="px-4 py-1">
+                    </nav>
+                </div>
+            </div>
+            <!-- <div class="col-auto bg-success p-1">
+                <button id="cli_button" class="btn btn-dark" data-bs-toggle="collapse" aria-expanded="false" data-bs-target="#wrapper" aria-controls="wrapper">&#9660;</button>
+            </div> -->
+        </header>
+
     </div>
-    <div id="drop-down"></div>
-</header>
-<main>
+</div>
+<!-- <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">Toggle right offcanvas</button>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+      <h5 id="offcanvasRightLabel">Offcanvas right</h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      ...
+    </div>
+</div> -->
+
+
+<!-- <header>
+    <div id="wrapper" class="open">
+        k
+        <div id="cli_wrapper">
+            <span id="cli_hint" class="cli_text">help</span>
+            <kbd id="cli_shortcut" class="cli_text disable_selection">Ctrl K</kbd>
+            <input id="cli" type="text" class="cli_text" />
+        </div>
+        <div id="cli_opender">&#9660;</div>
+    </div>
+</header> -->
+
+<!-- <main>
     <div id="container">
         <div id="note" class="page">
         </div>
@@ -19,7 +57,6 @@
 </main>
 <aside>
     <footer></footer>
-</aside>
-
+</aside> -->
 
 {% endblock %}

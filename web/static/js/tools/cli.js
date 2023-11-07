@@ -1,7 +1,15 @@
 const commands = [
     {
         alias: 'help',
-        action: () => {}
+        action: () => {},
+        help: "",
+        tree: [
+            {
+                varible: '<DUPA>',
+                action: () => {},
+                help: "",
+            },
+        ]
     },
     {
         alias: 'jhfh',
@@ -191,9 +199,9 @@ function cliTabPressUpdate(cli, hint) {
 
     cli.value = cli.value.replace(/\s\s/g, ' ');
 
-    console.log("comboOptionIndex", comboOptionIndex)
-    console.log("interuptedComboOptions", interuptedComboOptions)
-    console.log("comboOptions",comboOptions)
+    // console.log("comboOptionIndex", comboOptionIndex)
+    // console.log("interuptedComboOptions", interuptedComboOptions)
+    // console.log("comboOptions",comboOptions)
     
 }
 

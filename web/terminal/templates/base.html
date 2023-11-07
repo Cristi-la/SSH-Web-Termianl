@@ -6,8 +6,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terminal</title>
+
+    {% load bootstrap5 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/cli.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tabs.css' %}">
 
     <!-- Code Mirror -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js" integrity="sha512-8RnEqURPUc5aqFEN04aQEiPlSAdE0jlFS/9iGgUyNtwFnSKCXhmB6ZTNl7LnDtDWKabJIASzXrzD0K+LYexU9g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -19,13 +25,14 @@
 <body>
     {% block content %}{% endblock %}
 </body>
+{% if user.is_authenticated %}
+<!-- Channels hander -->
+<script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
+{% endif %}
 
 <!-- Tools - only handlers -->
 <script type="text/javascript" src="{% static 'js/tools/cli.js' %}"></script>
-
-<!-- Channels hander -->
-<script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
-
+<script type="text/javascript" src="{% static 'js/tools/ui.js' %}"></script>
 
 <!-- General handler -->
 <script type="text/javascript" src="{% static 'js/app.js' %}"></script>

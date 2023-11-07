@@ -13,6 +13,10 @@ var cm = CodeMirror(note, {
 });
 
 
+
+// //////////////////
+//      CLI
+// ///////////////
 const hint = document.getElementById('cli_hint');
 const cli = document.getElementById('cli');
 
@@ -28,3 +32,21 @@ cli.addEventListener("keydown", function(event) {
         cliTabPressUpdate(cli, hint);
     }
 });
+
+document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.key === 'k') {
+        event.preventDefault();
+        cli.focus()
+    }
+});
+
+// //////////////////
+//      Tabs
+// ///////////////
+var sessions_data = [
+    { session_id: 1, session_name: 'Mama Mateusza' },
+    { session_id: 2, session_name: 'Tata Mateusza' },
+    { session_id: 3, session_name: 'Mama Mateusza(1)' },
+    { session_id: 4, session_name: 'Mateusz' },
+];
+loadSessions(sessions_data);

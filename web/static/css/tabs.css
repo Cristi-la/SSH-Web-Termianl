@@ -1,0 +1,35 @@
+.from-tab {
+    background-color: var(--slate-800);
+    border: 1px solid var(--slate-700);
+    color: var(--slate-500);
+    position: relative;
+    cursor: pointer;
+}
+.from-tab:hover {
+    background-color: var(--slate-700);
+    color: var(--slate-400)
+}
+
+.from-tab:active,
+.from-tab:focus {
+    background-color: var(--slate-600);
+    color: var(--slate-300)
+}
+
+
+
+.from-tab-close {
+    right: 0;
+    background-color: var(--slate-500);
+    top: 1px;
+    padding: .3em .5em;
+    border-radius: 100%;
+    opacity: 0;
+    color: var(--slate-200);
+    position: absolute;
+    transition: opacity .115s ease-in-out;
+    cursor: pointer;
+}
+.from-tab:hover > .from-tab-close{
+    opacity: 1;
+}

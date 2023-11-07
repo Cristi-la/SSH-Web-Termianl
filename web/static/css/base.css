@@ -1,6 +1,25 @@
-html, body {
-    padding: 0;
-    margin: 0;
-    background-color: black;
+:root {
+    --slate-900: rgb(15 23 42);
+    --slate-800: rgb(30 41 59);
+    --slate-700: rgb(55 65 81);
+    --slate-600: rgb(71 85 105);
+    --slate-500: rgb(100 116 139);
+    --slate-400: rgb(148 163 184);
+	--slate-300: rgb(203 213 225);
+    --slate-200: rgb(226 232 240);
+
+    /* --bs-body-bg: var(--slate-900); */
+    --bs-body-color: var(--slate-200);
+}
+
+body {
+    height: 100vh;
+    background-image: linear-gradient(0deg, var(--slate-800) 0%, var(--slate-900) 30%);
+}
+
+.disable_selection {
+  webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
 }
 
