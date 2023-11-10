@@ -10,6 +10,6 @@ serverSocket.onmessage = function(e){
 }
 
 sshServerSocket.onmessage = function(e){
-    let data = JSON.parse(e.data);
-    processSSHResponse(data);
+    let data = JSON.parse(e.data)
+    processSSHResponse(data)
 }

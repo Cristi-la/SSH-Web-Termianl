@@ -53,29 +53,26 @@ class SshConsumer(AsyncWebsocketConsumer):
             loop = asyncio.get_running_loop()
             stdin, stdout, stderr = await loop.run_in_executor(None, self.ssh.exec_command, command)
 
-            complete_output = ""
-
+            line_buffer = ""
             while not stdout.channel.exit_status_ready():
-
                 while stdout.channel.recv_ready():
-                    line = stdout.readline()
-                    if isinstance(line, bytes):
-                        line = line.decode('utf-8')
-                    complete_output += line
-                    await self.send(
-                        text_data=json.dumps({'output': line}))
-                await asyncio.sleep(0.1)
+                    char = stdout.channel.recv(1).decode('utf-8')
+                    line_buffer += char
+                    if char == '\n':
+                        await self.send(text_data=json.dumps({'output': line_buffer + "nnnnnnnnn"}))
+                        line_buffer = ""
+                    elif char == '\r':
+                        await self.send(text_data=json.dumps({'output': line_buffer + "rrrrrr"}))
+                        line_buffer = ""
 
-            output_remaining = stdout.read()
-            if isinstance(output_remaining, bytes):
-                output_remaining = output_remaining.decode('utf-8').strip()
-            complete_output += output_remaining
+                await asyncio.sleep(0.1)  # Sleep to prevent high CPU usage
 
-            error = stderr.read()
-            if isinstance(error, bytes):
-                error = error.decode('utf-8').strip()
+            if line_buffer:
+                await self.send(text_data=json.dumps({'output': line_buffer}))
 
-            await self.send(text_data=json.dumps({'output': complete_output, 'error': error}))
+            output_remaining = stdout.read().decode('utf-8').strip()
+            error = stderr.read().decode('utf-8').strip()
+            await self.send(text_data=json.dumps({'output': output_remaining, 'error': error}))
 
         except Exception as e:
             await self.send(text_data=json.dumps({'error': str(e)}))
