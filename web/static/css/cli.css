@@ -1,11 +1,10 @@
+
+
 .form-label {
   top: 0;
   left: 0;
   height: 100%;
-  padding: 1rem 1.5rem;
-  pointer-events: none;
-  border: 1px solid transparent;
-  transform-origin: 0 0;
+  padding: .50rem 1.63rem;
   color: var(--slate-200);
   opacity: .4;
 }
@@ -13,18 +12,10 @@
   display: block;
   width: 100%;
   padding: .375rem 1.5rem;
-  font-size: 1rem;
   font-weight: 400;
-  color: #212529;
   background-clip: padding-box;
-  border: 2px solid var(--slate-700);
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
   color: var(--slate-200);
   border-radius: 1rem;
-  height: calc(3.5rem + 2px);
-  line-height: 1.25;
   background-color: var(--slate-800);
   outline: none;
   transition: border .5s ease-in-out;
@@ -37,13 +28,11 @@
     top: 0;
     right: 0;
     height: 100%;
-    padding: 1rem 1.5rem;
+    padding: .50rem 1.63rem;
     pointer-events: none;
-    border: 1px solid transparent;
-    transform-origin: 0 0;
+    font-weight: 800;
     color: var(--slate-500);
     font-family: var(--bs-font-monospace);
-    line-height: 1.66;
     opacity: 1;
     transition: opacity .4s ease-in-out;
 }

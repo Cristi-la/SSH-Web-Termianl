@@ -1,35 +1,66 @@
-.from-tab {
+.form-tab {
     background-color: var(--slate-800);
-    border: 1px solid var(--slate-700);
     color: var(--slate-500);
     position: relative;
     cursor: pointer;
+    transition: background-color .115s ease-in-out
+                color .115s ease-in-out;
 }
-.from-tab:hover {
+.form-tab:hover {
     background-color: var(--slate-700);
-    color: var(--slate-400)
+    color: var(--slate-200)
 }
 
-.from-tab:active,
-.from-tab:focus {
+.form-tab:active,
+.form-tab:focus,
+.form-tab.active {
     background-color: var(--slate-600);
-    color: var(--slate-300)
+    color: var(--slate-300);
 }
 
+/* .form-tab-new {
+    background-color: var(--sky-950);
+    color: var(--slate-600);
+}
+
+.form-tab-new:active,
+.form-tab-new:focus,
+.form-tab-new:hover {
+    background-color: var(--sky-950);
+    color: var(--slate-500);
+} */
 
 
-.from-tab-close {
-    right: 0;
-    background-color: var(--slate-500);
-    top: 1px;
-    padding: .3em .5em;
+
+.form-tab-close {
+    right: .0rem;
+    border: 1px solid var(--slate-700);
+    background-color: var(--slate-800);
+    top: .0rem;
+    padding: .2rem .32rem;
     border-radius: 100%;
-    opacity: 0;
+    opacity: .05;
     color: var(--slate-200);
     position: absolute;
-    transition: opacity .115s ease-in-out;
+    transition: opacity .115s ease-in-out, 
+                background-color .115s ease-in-out;
     cursor: pointer;
 }
-.from-tab:hover > .from-tab-close{
+.form-tab:hover > .form-tab-close{
+    opacity: .4;
+    background-color: var(--slate-500);
+}
+
+.form-tab > .form-tab-close:hover{
     opacity: 1;
+}
+
+.window > .CodeMirror {
+    border-radius: .5rem;
+    border: solid 2px var(--slate-800);
+    display: block;
+  }
+  
+.window > .CodeMirror.hide {
+    display: none;
 }

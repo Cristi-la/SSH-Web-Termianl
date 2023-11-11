@@ -1,20 +1,38 @@
 :root {
-    --slate-900: rgb(15 23 42);
-    --slate-800: rgb(30 41 59);
-    --slate-700: rgb(55 65 81);
-    --slate-600: rgb(71 85 105);
-    --slate-500: rgb(100 116 139);
-    --slate-400: rgb(148 163 184);
-	--slate-300: rgb(203 213 225);
-    --slate-200: rgb(226 232 240);
-
+    --slate-900: #0f172a;
+    --slate-800: #1e293b;
+    --slate-700: #374151;
+    --slate-600: #475569;
+    --slate-500: #64748b;
+    --slate-400: #94a3b8;
+	--slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
     /* --bs-body-bg: var(--slate-900); */
+
+    --sky-950: #082f49;
+    --sky-900: #0c4a6e;
+    --sky-800: #075985;
+    --sky-700: #0369a1;
+    --sky-600: #0284c7;
+    --sky-500: #0ea5e9;
+    --sky-400: #38bdf8;
+
     --bs-body-color: var(--slate-200);
 }
 
 body {
-    height: 100vh;
-    background-image: linear-gradient(0deg, var(--slate-800) 0%, var(--slate-900) 30%);
+    min-height: 100vh;
+    min-width: 900px;
+    background-image: linear-gradient(0deg, var(--slate-800) 0%, var(--slate-900) 0%);
+}
+
+
+/* utils */
+.border-slate-700 {
+    border: 2px solid var(--slate-700);
+}
+.border-slate-700-1 {
+    border: 1px solid var(--slate-700);
 }
 
 .disable_selection {
@@ -23,3 +41,17 @@ body {
   user-select: none; /* Standard syntax */
 }
 
+
+
+/* General */
+header {
+    height: auto;
+}
+main {
+    min-height: 90vh;
+    max-height: 90vh;
+}
+
+#user_menu_img {
+    background-color: var(--sky-950);
+}

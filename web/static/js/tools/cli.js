@@ -206,5 +206,31 @@ function cliTabPressUpdate(cli, hint) {
 }
 
 
+function loadCli(){
+    const hint = document.getElementById('cli_hint');
+    const cli = document.getElementById('cli');
+
+
+    cli.addEventListener("input", () =>{
+        updateHint(cli, hint);
+    });
+
+
+    cli.addEventListener("keydown", function(event) {
+        if (event.key === "Tab") {
+            event.preventDefault();
+            cliTabPressUpdate(cli, hint);
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.ctrlKey && event.key === 'k') {
+            event.preventDefault();
+            cli.focus()
+        }
+    });
+}
+
+
 
 
