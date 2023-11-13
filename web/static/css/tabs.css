@@ -11,10 +11,13 @@
     color: var(--slate-200)
 }
 
-.form-tab:active,
+.form-tab:active {
+    background-color: var(--slate-600);
+    color: var(--slate-300);
+}
 .form-tab:focus,
 .form-tab.active {
-    background-color: var(--slate-600);
+    background-color: var(--slate-500);
     color: var(--slate-300);
 }
 
