@@ -55,3 +55,33 @@ main {
 #user_menu_img {
     background-color: var(--sky-950);
 }
+
+/* Animations */
+
+.blink {
+	-webkit-animation: blink-2 0.9s both;
+	        animation: blink-2 0.9s both;
+}
+ @-webkit-keyframes blink-2 {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.2;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes blink-2 {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.2;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  

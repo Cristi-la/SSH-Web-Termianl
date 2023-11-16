@@ -4,6 +4,8 @@ class TabManager {
         this.DATA = data;
         this.tabs = [];
         this.tabsContainer = document.getElementById('tabs');
+        console.log('sss')
+        document.addEventListener('keydown', this.tabSwitching.bind(this))
     }
 
     loadTabs() {
@@ -18,7 +20,7 @@ class TabManager {
         const tabElement = new TabElement(
             data,
             this.removeTab.bind(this),
-            this.changeWindow.bind(this),
+            this.selectTab.bind(this),
             this.swapTabsIds.bind(this),
         );
         this.tabs.push(tabElement);
@@ -26,22 +28,108 @@ class TabManager {
         data.loadedTab = true;
     }
 
+    getNearestTabId() {
+        const activeTabs = this.tabsContainer.querySelectorAll('.form-tab.active');
+        if (!activeTabs || activeTabs.length > 1) return null; 
+
+        const previousId =  this.getPreviousTabId(activeTabs[0]);
+        if (previousId) return previousId;
+
+        const nextId = this.getNextTabId(activeTabs[0]);
+        if (nextId) return nextId;
+
+        return this.getFirstTabId();
+    }
+    getNextTabId(activeTab){
+        const nextTab = activeTab.nextElementSibling
+        if (nextTab) return parseInt(nextTab.getAttribute('data-tab-id'));
+    }
+    getPreviousTabId(activeTab){
+        const previousTab = activeTab.previousElementSibling
+        if (previousTab) return parseInt(previousTab.getAttribute('data-tab-id'));
+    }
+    getFirstTabId(){
+        const firstTabElement = this.tabsContainer.firstElementChild;
+
+        if (!firstTabElement) return null; 
+    
+        const tabId = firstTabElement.getAttribute('data-tab-id');
+    
+        if (!tabId) return null;
+    
+        return parseInt(tabId);
+    }
+    getLastTabId() {
+        const lastTabElement = this.tabsContainer.lastElementChild;
+    
+        if (!lastTabElement) return null;
+    
+        const tabId = lastTabElement.getAttribute('data-tab-id');
+    
+        if (!tabId) return null;
+    
+        return parseInt(tabId);
+    }
+
+    getCycleNextTabId(){
+        const activeTabs = this.tabsContainer.querySelectorAll('.form-tab.active');
+        if (!activeTabs || activeTabs.length > 1) return; 
+
+        const nextTabId = this.getNextTabId(activeTabs[0])
+        if (nextTabId) return nextTabId;
+
+        const firstTabId = this.getFirstTabId()
+        if (firstTabId) return firstTabId;
+    }
+
+    getCyclePreviousTabId(){
+        const activeTabs = this.tabsContainer.querySelectorAll('.form-tab.active');
+        if (!activeTabs || activeTabs.length > 1) return; 
+
+        const previousId =  this.getPreviousTabId(activeTabs[0]);
+        if (previousId) return previousId;
+
+        const lastTabId = this.getLastTabId()
+        if (lastTabId) return lastTabId;
+    }
+
     removeTab(id) {
+        if (!id) return;
+
         const index = this.tabs.findIndex(tab => tab.id === id);
         if (index === -1) return;
 
+        let wasActive = this.tabs[index].element.classList.contains('active')
+        if (wasActive) this.selectTab(this.getNearestTabId())
+
         this.tabs[index].remove();
         this.tabs.splice(index, 1);
+        this.windowManager.removeWindow(id)
+
+
+    }
+    removeAllTab(){
+        this.tabs.forEach(tab => {
+            tab.remove();
+            this.windowManager.removeWindow(tab.id)
+        });
+        this.tabs = []
     }
 
     selectTab(id) {
+        if (!id) return;
+
         this.tabs.forEach(tab => {
-            if (tab.id === id) tab.select();
-            else tab.deselect();
+            if (tab.id === id) {
+                tab.select();
+                this.windowManager.showWindow(id)
+            } else tab.deselect();
         });
     }
 
     swapTabsIds(id1, id2) {
+        if (!id1 || !id2) return;
+
         const index1 = this.tabs.findIndex(tab => tab.id === id1);
         const index2 = this.tabs.findIndex(tab => tab.id === id2);
 
@@ -61,33 +149,48 @@ class TabManager {
         this.tabsContainer.removeChild(temp);
     }
 
-    changeWindow(id){
-        this.selectTab(id)
-        this.windowManager.showWindow(id)
-    }
-
     preloadSelectedTab(id){
+        if (!id) return;
+
         const index = this.DATA.findIndex(tab => tab.id === id);
         const data = this.DATA[index]
         this.addTab(data)
-        this.changeWindow(id)
+        this.selectTab(id)
+    }
+
+    tabSwitching(event){
+        if (event.key === 'Tab') {  
+            event.preventDefault(); 
+            if (event.shiftKey) {
+                this.selectTab(this.getCyclePreviousTabId());
+            } else {
+                this.selectTab(this.getCycleNextTabId());
+            }
+        }
     }
 }
 
 class TabElement {
-    constructor(data, removeTabCallback, changeWindowCallback, swapTabsCallback) {
+    constructor(data, removeTabCallback, selectTabCallback, swapTabsCallback) {
         this.id = data.id;
         this.element = this.generateTab(data);
         this.element.addEventListener('click', this.handleClick.bind(this));
+
         this.element.addEventListener('dragstart', this.handleDragStart.bind(this));
-        this.element.addEventListener('dragover', this.handleDragOver);
+        this.element.addEventListener('dragend', this.handleDragEnd.bind(this));
+
+        this.element.addEventListener('dragover', this.handleDragOver.bind(this));
+        this.element.addEventListener('dragleave', this.handleDragLeave.bind(this));
         this.element.addEventListener('drop', this.handleDrop.bind(this));
         this.closeButton = this.generateCloseTab(data.id);
         this.element.appendChild(this.closeButton);
 
         this.removeTabCallback = removeTabCallback
-        this.changeWindowCallback = changeWindowCallback
+        this.selectTabCallback = selectTabCallback
         this.swapTabsCallback = swapTabsCallback
+
+        this.contextMenu = new ContextMenu(defaultTabContextMenu, this.id);
+        this.contextMenu.attachContextMenuListener(this.element);
     }
 
     generateTab(data) {
@@ -127,10 +230,19 @@ class TabElement {
     // Event listeners
     handleClick(e) {
         if (e.target === this.element)
-        this.changeWindowCallback(this.id);
+        this.selectTabCallback(this.id);
+    }
+    handleDragEnd(e){
+        // Drop Target handler
+        this.element.classList.remove('drag')
+        this.element.classList.add('blink')
+        e.preventDefault();
     }
 
     handleDragStart(e) {
+        // Drop Target handler
+        this.element.classList.add('drag')
+
         if (e.target.getAttribute('draggable') === 'true')
             e.dataTransfer.setData(
                 "data-tab-id",
@@ -139,10 +251,21 @@ class TabElement {
     }
 
     handleDragOver(e) {
+        // Draggable Element handler
+        this.element.classList.add('dragover')
+        e.preventDefault();
+    }
+    handleDragLeave(e) {
+        // Draggable Element handler
+        this.element.classList.remove('dragover')
         e.preventDefault();
     }
 
+
     handleDrop(e) {
+        // Draggable Element handler
+        this.element.classList.remove('dragover')
+        this.element.classList.add('blink')
 
         this.swapTabsCallback(
             parseInt(e.dataTransfer.getData("data-tab-id")),
@@ -250,3 +373,115 @@ class Windo {
         this.element.remove();
     }
 }
+
+
+// ###############
+//  Context Menu
+// ###############
+class ContextMenu {
+    constructor(menuItems, tid) {
+        this.tid = tid // Tabulator/Window ID
+        this.padding = 15
+        this.menuItems = menuItems;
+    }
+    generatDivider(item){
+        const divider = document.createElement('div');
+        divider.classList.add('divider')
+        return divider
+    }
+    generatActionItem(item, id){
+        const menuItem = document.createElement('li');
+        if ('disabled' in item && item.disabled) menuItem.classList.add('disabled')
+        menuItem.textContent = item.label;
+        menuItem.addEventListener('click', (e) => {
+            e.preventDefault()
+            if (menuItem.classList.contains('disabled')) return;
+            
+            item.action(item, this, id)
+            this.removeContextMenu();
+        });
+
+        return menuItem
+    }
+
+    generatMenuItem(item, id){
+        switch (item.type) {
+            case 'divider':
+                return this.generatDivider(item)
+            default:
+                return this.generatActionItem(item, id)
+        }
+    }
+
+    generateContextMenu() {
+        const contextMenu = document.createElement('ul');
+        contextMenu.classList.add('context-menu');
+        contextMenu.setAttribute('role', 'menu');
+        contextMenu.setAttribute('aria-labelledby', 'dropdownMenu');
+
+        this.menuItems.forEach((item, id) => {
+            contextMenu.appendChild(
+                this.generatMenuItem(item, id)
+            );
+        });
+
+        document.body.appendChild(contextMenu);
+        return contextMenu;
+    }
+
+    openContextMenu(event){
+        this.removeOtherContextMenus()
+        this.element = this.generateContextMenu();
+        const [x, y] = this.setLocation(event)
+        this.element.style['top'] = y + 'px';
+        this.element.style['left'] = x + 'px';
+    }
+
+    setLocation(event) {
+        let x = event.pageX;
+        let y = event.pageY;
+
+        if (event.pageX + this.element.offsetWidth + this.padding > window.innerWidth + window.scrollX) {
+            x = window.innerWidth + window.scrollX - this.element.offsetWidth - this.padding;
+        } else if (event.pageX - this.padding < window.scrollX) {
+            x = window.scrollX + this.padding;
+        } else {
+            x = Math.max(x, window.scrollX + this.padding);
+        }
+    
+        if (event.pageY + this.element.offsetHeight + this.padding > window.innerHeight + window.scrollY) {
+            y = window.innerHeight + window.scrollY - this.element.offsetHeight - this.padding;
+        } else if (event.pageY - this.padding < window.scrollY) {
+            y = window.scrollY + this.padding;
+        } else {
+            y = Math.max(y, window.scrollY + this.padding);
+        }
+    
+        return [x, y]
+    }
+
+    removeContextMenu() {
+        this.element.remove()
+    }
+    
+    removeOtherContextMenus() {
+        const existingMenus = document.querySelectorAll('.context-menu');
+
+        existingMenus.forEach(menu => {
+            menu.remove();
+        });
+    }
+
+    attachContextMenuListener(element) {
+        element.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            document.addEventListener('click', e=>{this.removeOtherContextMenus()})
+            document.addEventListener('contextmenu', e=>{e.preventDefault();})
+
+            this.openContextMenu(e);
+        });
+    }
+}
+
+

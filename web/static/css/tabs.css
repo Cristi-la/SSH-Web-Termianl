@@ -1,3 +1,4 @@
+/*  --- TABULATORS ---  */
 .form-tab {
     background-color: var(--slate-800);
     color: var(--slate-500);
@@ -21,20 +22,20 @@
     color: var(--slate-300);
 }
 
-/* .form-tab-new {
+/* Drag */
+.form-tab.dragover {
+    background-color: var(--slate-900);
+    color: var(--slate-600); 
+}
+.form-tab.drag {
     background-color: var(--sky-950);
-    color: var(--slate-600);
+    color: var(--slate-300);
+    opacity: .5;
 }
 
-.form-tab-new:active,
-.form-tab-new:focus,
-.form-tab-new:hover {
-    background-color: var(--sky-950);
-    color: var(--slate-500);
-} */
 
 
-
+/* Drag */
 .form-tab-close {
     right: .0rem;
     border: 1px solid var(--slate-700);
@@ -58,6 +59,7 @@
     opacity: 1;
 }
 
+/*  --- WINDOWS ---  */
 .window > .CodeMirror {
     border-radius: .5rem;
     border: solid 2px var(--slate-800);
@@ -66,4 +68,43 @@
   
 .window > .CodeMirror.hide {
     display: none;
+}
+
+/*  --- CONTEXT MENU ---  */
+.context-menu {
+    z-index: 10;
+    min-width: 8rem;
+    max-width: 12rem;
+    overflow-x: hidden;
+    padding: 0 0;
+    margin: 0;
+    font-size: .8rem;
+    text-align: left;
+    list-style: none;
+    background-color: var(--slate-800);
+    background-clip: padding-box;
+    border: 1px solid var(--slate-700);
+    border-radius: .25rem;
+    display: block;
+    position: fixed;
+}
+.context-menu > li {
+    color: var(--slate-500);
+    padding: .2rem 1rem;
+    cursor: pointer;
+}
+.context-menu > li.disabled {
+    color: var(--slate-600);
+    background-color: var(--slate-900);
+    cursor: initial;
+}
+.context-menu > li:hover {
+    color: var(--slate-400);
+    background-color: var(--slate-700);
+    cursor: pointer;
+}
+.context-menu > div.divider {
+    height: 0;
+    overflow: hidden;
+    border-top: 1px solid var(--slate-600);
 }

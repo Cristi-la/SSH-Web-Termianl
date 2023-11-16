@@ -216,19 +216,19 @@ function loadCli(){
     });
 
 
-    cli.addEventListener("keydown", function(event) {
-        if (event.key === "Tab") {
-            event.preventDefault();
-            cliTabPressUpdate(cli, hint);
-        }
-    });
+    // cli.addEventListener("keydown", function(event) {
+    //     if (event.key === "Tab") {
+    //         event.preventDefault();
+    //         cliTabPressUpdate(cli, hint);
+    //     }
+    // });
 
-    document.addEventListener('keydown', (event) => {
-        if (event.ctrlKey && event.key === 'k') {
-            event.preventDefault();
-            cli.focus()
-        }
-    });
+    // document.addEventListener('keydown', (event) => {
+    //     if (event.ctrlKey && event.key === 'k') {
+    //         event.preventDefault();
+    //         cli.focus()
+    //     }
+    // });
 }
 
 
