@@ -60,15 +60,44 @@
 }
 
 /*  --- WINDOWS ---  */
+.window {
+    position: relative;
+}
 .window > .CodeMirror {
     border-radius: .5rem;
     border: solid 2px var(--slate-800);
-    display: block;
-  }
-  
-.window > .CodeMirror.hide {
+
+}
+/* windows KEYS */
+.window > .sessionKey {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 1rem 1.4rem;
+    cursor: pointer;
+}
+
+.window > .sessionKey, 
+.window > .sessionKey.enable::before {
+    color: var(--slate-500);
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 1.2rem;
+    transition: color .3s ease-in-out;
+}
+.window > .sessionKey::before {
+    content: '#';
+    margin-right: .15rem;
+    cursor: initial;
+}
+.window > .sessionKey.hideKey,
+.window > .sessionKey.hideKey::before {
+    color: var(--slate-600)
+}
+.window > .CodeMirror.hide ~ .sessionKey {
     display: none;
 }
+
 
 /*  --- CONTEXT MENU ---  */
 .context-menu {
@@ -98,11 +127,12 @@
     background-color: var(--slate-900);
     cursor: initial;
 }
-.context-menu > li:hover {
+.context-menu > li:not(.disabled):hover {
     color: var(--slate-400);
     background-color: var(--slate-700);
     cursor: pointer;
 }
+
 .context-menu > div.divider {
     height: 0;
     overflow: hidden;

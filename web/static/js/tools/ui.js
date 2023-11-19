@@ -1,18 +1,14 @@
 class TabManager {
     constructor(data, windowManager) {
         this.windowManager = windowManager
-        this.DATA = data;
+        this.data = data;
         this.tabs = [];
         this.tabsContainer = document.getElementById('tabs');
-        console.log('sss')
-        document.addEventListener('keydown', this.tabSwitching.bind(this))
     }
 
     loadTabs() {
-        this.DATA.forEach((data) => {
-            if (!data.loadedTab) {
-                this.addTab(data);
-            }
+        this.data.forEach((data) => {
+            if (!data.loadedTab) this.addTab(data);
         });
     }
 
@@ -152,13 +148,16 @@ class TabManager {
     preloadSelectedTab(id){
         if (!id) return;
 
-        const index = this.DATA.findIndex(tab => tab.id === id);
-        const data = this.DATA[index]
+        const index = this.data.findIndex(tab => tab.id === id);
+        const data = this.data[index]
         this.addTab(data)
         this.selectTab(id)
     }
 
     tabSwitching(event){
+        if (document.activeElement.tagName.toLowerCase() === 'textarea') {
+            return;
+        }
         if (event.key === 'Tab') {  
             event.preventDefault(); 
             if (event.shiftKey) {
@@ -168,11 +167,24 @@ class TabManager {
             }
         }
     }
+
+    getIndex(id){
+        return this.tabs.findIndex((tab) => tab.id === id);
+    }
+    getTab(id){
+        const index = this.getIndex(id);
+        if (index === -1) return null
+
+        return this.tabs[index]
+    }
 }
 
 class TabElement {
     constructor(data, removeTabCallback, selectTabCallback, swapTabsCallback) {
         this.id = data.id;
+        this.session_key = data.session_key;
+        this.session_manage = data.session_manage;
+        this.session_enabled = data.session_enabled;
         this.element = this.generateTab(data);
         this.element.addEventListener('click', this.handleClick.bind(this));
 
@@ -189,8 +201,30 @@ class TabElement {
         this.selectTabCallback = selectTabCallback
         this.swapTabsCallback = swapTabsCallback
 
-        this.contextMenu = new ContextMenu(defaultTabContextMenu, this.id);
+        this.contextMenu = new ContextMenu(
+            this.generateContextMenu(), 
+            this.id,
+            this.generateContextMenu.bind(this)
+        );
         this.contextMenu.attachContextMenuListener(this.element);
+    }
+
+    generateContextMenu(){
+        let menuitems = []
+
+        if (this.session_manage === false) {
+            menuitems.push(...disbaleddSessionContextMenuMixin)
+        } else {
+            if (this.session_enabled && this.session_key) {
+                menuitems.push(...sharedSessionContextMenuMixin)
+            }
+            else menuitems.push(...createSessionContextMenuMixin)
+        }
+
+        menuitems.push(...defaultTabContextMenu)
+
+
+        return menuitems
     }
 
     generateTab(data) {
@@ -261,7 +295,6 @@ class TabElement {
         e.preventDefault();
     }
 
-
     handleDrop(e) {
         // Draggable Element handler
         this.element.classList.remove('dragover')
@@ -280,12 +313,12 @@ class TabElement {
 // ###############
 class WindowManager {
     constructor(data) {
-        this.DATA = data;
+        this.data = data;
         this.windows = [];
         this.windowsContainer = document.getElementById('windows');
     }
     loadWindows() {
-        this.DATA.forEach((data) => {
+        this.data.forEach((data) => {
             if (!data.loadedWindow) this.addWindow(data);
         });
     }
@@ -296,16 +329,17 @@ class WindowManager {
         this.windowsContainer.appendChild(newWindow.element);
 
         newWindow.createEditor()
+        newWindow.createSessionKey()
         newWindow.hide()
         data.loadedWindow = true
     }
 
     removeWindow(id) {
-        const index = this.windows.findIndex((window) => window.id === id);
-        if (index !== -1) {
-            this.windows[index].remove();
-            this.windows.splice(index, 1);
-        }
+        const index = this.getIndex(id);
+        if (index === -1) return;
+
+        this.windows[index].remove();
+        this.windows.splice(index, 1);
     }
     showWindow(id) {
         this.windows.forEach(window => {
@@ -314,10 +348,20 @@ class WindowManager {
         });
     }
     preloadSelectedWindow(id){
-        const index = this.DATA.findIndex(windo => windo.id === id);
-        const data = this.DATA[index]
+        const index = this.data.findIndex((window) => window.id === id);
+
+        const data = this.data[index]
         this.addWindow(data)
         this.showWindow(id)
+    }
+    getIndex(id){
+        return this.windows.findIndex((window) => window.id === id);
+    }
+    getWindow(id){
+        const index = this.getIndex(id);
+        if (index === -1) return null
+
+        return this.windows[index]
     }
 }
 
@@ -325,7 +369,13 @@ class Windo {
     constructor(data) {
         this.type = data.type;
         this.id = data.id;
+        this.session_key_hide = data.session_key_hide
+        this.session_manage = data.session_manage
+        this.session_enabled = data.session_enabled
         this.content = data.content;
+        this.content = data.content;
+        this.session_key = data.session_key;
+        this.elementKey = this.generateSessionKeyElement();
         this.element = this.generateWindow();
     }
 
@@ -334,6 +384,7 @@ class Windo {
         window.classList.add('window');
         window.setAttribute('data-window-id', this.id);
         window.setAttribute('data-window-type', this.type);
+
         return window;
     }
 
@@ -372,6 +423,71 @@ class Windo {
     remove() {
         this.element.remove();
     }
+
+    generateSessionKeyElement(){
+        if (this.elementKey) this.elementKey.remove()
+
+        const div = document.createElement('div');
+        div.classList.add('sessionKey');
+        div.classList.add('hide');
+        div.setAttribute('data-key-id', this.id);
+        div.textContent = '######';
+
+        div.addEventListener('click', this.copySessionKey.bind(this));
+        div.addEventListener('dblclick', this.toggleSessionKey.bind(this));
+
+        return div
+    }
+
+    createSessionKey(){
+        this.element.appendChild(this.elementKey);
+
+        if (!this.session_key) return;
+
+        this.enableSessionKey()
+    }
+
+    enableSessionKey(key){
+        if (this.session_manage === false || !this.session_enabled == true || !this.session_key) return;
+
+        if (key) this.session_key = key;
+        this.elementKey.textContent = this.session_key
+
+        this.elementKey.classList.remove('hide');
+
+        if (this.session_key_hide) this.toggleSessionKey()
+
+    }
+    disableSessionKey(){
+        this.session_key = '########';
+        this.elementKey.textContent = this.session_key
+        this.elementKey.classList.add('hide');
+    }
+    
+    toggleSessionKey(){
+        if (this.elementKey.classList.contains('hide')) return;
+
+        this.elementKey.classList.toggle('hideKey');
+        if (this.elementKey.classList.contains('hideKey'))
+            this.elementKey.textContent = '########'
+        else this.elementKey.textContent = this.session_key
+    }
+
+    copySessionKey(){
+        if (this.elementKey.classList.contains('hideKey')) return;
+        this.elementKey.classList.add('jello-horizontal');
+        
+        setTimeout(()=>{
+            this.elementKey.classList.remove('jello-horizontal');
+        }, 900);
+
+        let textarea = document.createElement('textarea');
+        textarea.value = this.session_key;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    }
 }
 
 
@@ -379,10 +495,11 @@ class Windo {
 //  Context Menu
 // ###############
 class ContextMenu {
-    constructor(menuItems, tid) {
+    constructor(menuItems, tid, bindMenuItemGetter) {
         this.tid = tid // Tabulator/Window ID
         this.padding = 15
         this.menuItems = menuItems;
+        this.bindMenuItemGetter = bindMenuItemGetter
     }
     generatDivider(item){
         const divider = document.createElement('div');
@@ -416,21 +533,29 @@ class ContextMenu {
     generateContextMenu() {
         const contextMenu = document.createElement('ul');
         contextMenu.classList.add('context-menu');
+        contextMenu.classList.add('disable_selection');
         contextMenu.setAttribute('role', 'menu');
         contextMenu.setAttribute('aria-labelledby', 'dropdownMenu');
 
-        this.menuItems.forEach((item, id) => {
+        if (!this.menuItems.length) {
             contextMenu.appendChild(
-                this.generatMenuItem(item, id)
+                this.generatMenuItem({ label: '-- No items --', disabled: true}, 0)
+
             );
-        });
+        } else {
+            this.menuItems.forEach((item, id) => {
+                contextMenu.appendChild(
+                    this.generatMenuItem(item, id)
+                );
+            });
+        }
 
         document.body.appendChild(contextMenu);
         return contextMenu;
     }
 
     openContextMenu(event){
-        this.removeOtherContextMenus()
+        ContextMenu.removeOtherContextMenus()
         this.element = this.generateContextMenu();
         const [x, y] = this.setLocation(event)
         this.element.style['top'] = y + 'px';
@@ -464,8 +589,10 @@ class ContextMenu {
         this.element.remove()
     }
     
-    removeOtherContextMenus() {
+    static removeOtherContextMenus(e) {
         const existingMenus = document.querySelectorAll('.context-menu');
+
+        if (e && e.target.classList.contains('disabled')) return;
 
         existingMenus.forEach(menu => {
             menu.remove();
@@ -475,13 +602,12 @@ class ContextMenu {
     attachContextMenuListener(element) {
         element.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-
-            document.addEventListener('click', e=>{this.removeOtherContextMenus()})
-            document.addEventListener('contextmenu', e=>{e.preventDefault();})
-
             this.openContextMenu(e);
         });
     }
+    reloadMenuItems(){
+        if(!this.bindMenuItemGetter) return;
+        this.menuItems = this.bindMenuItemGetter()
+    }
 }
-
 
