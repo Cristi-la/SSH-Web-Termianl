@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'bootstrap5',
     "django_components",
     "django_components.safer_staticfiles",
+    'colorfield',
+    'encrypted_model_fields',
 
     # Project apps
     'terminal',
@@ -61,6 +63,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+FIELD_ENCRYPTION_KEY = b'pfc_WxE-RKvu2dF-gWHTXL8JKdK_Aie2Lr29F-XiJso='
 
 ROOT_URLCONF = 'web.urls'
 
@@ -102,6 +106,12 @@ DATABASES = {
     }
 }
 
+AUTH_USER_MODEL = 'terminal.AccountData'
+
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
