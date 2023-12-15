@@ -5,7 +5,11 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
 from encrypted_model_fields.fields import EncryptedCharField
-
+from django.core.exceptions import ValidationError
+from web.settings import MAX_SSH_SESSIONS, MAX_NOTE_SESSIONS, MAX_NOTE_SHARING, MAX_SSH_SHARING, MAX_USER_NOTE_SESSIONS, MAX_USER_SSH_SESSIONS
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.core.exceptions import ValidationError
 
 class AccManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -24,6 +28,10 @@ class AccManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class AccountData(AbstractBaseUser, PermissionsMixin):
+    saved_hosts: 'SavedHost'
+    sessions: 'SessionsList'
+    sessions: 'SessionsList'
+
     email = models.EmailField(max_length=40, unique=True, help_text='The email address of the user.')
     first_name = models.CharField(max_length=30, blank=True, null=True, help_text='The first name of the user.')
     last_name = models.CharField(max_length=30, blank=True, null=True, help_text='The last name of the user.')
@@ -70,6 +78,9 @@ class SavedHost(models.Model):
 #  SESSIONS DATA
 # 
 class Log(models.Model):
+    notedata_logs: 'NotesData'
+    sshdata_logs: 'SSHData'
+
     log_text = models.TextField(help_text='Log entry text.')
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the log entry was created.')
 
@@ -77,6 +88,8 @@ class Log(models.Model):
         return f"Log entry created at {self.created_at}"
 
 class BaseData(models.Model):
+    log: Log
+
     name = models.CharField(max_length=100, help_text='Name of the data.')
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the data was created.')
     updated_at = models.DateTimeField(auto_now=True, help_text='The date and time when the data was last updated.')
@@ -93,16 +106,28 @@ class BaseData(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def _get_session_count(self, is_active=None):
+        content_type = ContentType.objects.get_for_model(self.__class__, for_concrete_model=True)
+        queryset = SessionsList.objects.filter(
+            object_id=self.pk,
+            content_type=content_type,
+        )
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active)
+        return queryset.count()
+
+    def get_sessions_count(self):
+        return self._get_session_count()
+
+    def get_active_sessions_count(self):
+        return self._get_session_count(is_active=True)
 
 class NotesData(BaseData):
-    session = models.ForeignKey('SessionsList', default=None,  null=True, blank=True, on_delete=models.SET_NULL, related_name='notes')
-
     def __str__(self):
         return f"Note: {self.name}"
 
 class SSHData(BaseData):
-    session = models.ForeignKey('SessionsList', default=None,  null=True, blank=True, on_delete=models.SET_NULL, related_name='ssh_sessions')
-
     def __str__(self):
         return f"SSH Connection: {self.name}"
 
@@ -114,26 +139,71 @@ class SessionsList(models.Model):
 
     # GenericForeignKey to reference either SSHData or NotesData
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, limit_choices_to={'model__in': ['sshdata', 'notesdata']})
-    object_id = models.PositiveIntegerField(null=True)
+    object_id = models.PositiveIntegerField(null=False)
     content_object = GenericForeignKey('content_type', 'object_id')
 
     # Reverse relations to get SSHData and NotesData associated with this session
     ssh_sessions = GenericRelation(SSHData, related_query_name='session')
     notes = GenericRelation(NotesData, related_query_name='session')
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         content_type = self.content_type
         object_id = self.object_id
-
+        
         if content_type and object_id:
             try:
-                related_model = content_type.get_object_for_this_type(pk=object_id)
-                super().save(*args, **kwargs)
+                content_type.get_object_for_this_type(pk=object_id)
             except content_type.model_class().DoesNotExist:
-                ...
+                raise ValidationError(f"The object with id {object_id} does not exist for the specified content type.")
+            
+        if not object_id:
+            raise ValidationError(f"The object id can not be negative.")
         
-        raise Http404(f"The object with id {object_id} does not exist for the specified content type.")
-
 
     def __str__(self):
         return f"{self.user.username}'s session {self.pk}"
+
+
+
+# RECEIVERS
+    
+
+# @receiver(pre_save, sender=SSHData)
+# def check_ssh_session_limits(sender, instance, **kwargs):
+#     if instance.pk is None:  # Check if it's a new object being created
+#         total_sessions_count = SSHData.objects.count()
+#         if total_sessions_count >= MAX_SSH_SESSIONS:
+#             raise ValidationError(f"The system has reached the maximum limit of {MAX_SSH_SESSIONS} SSH sessions.")
+        
+#         if instance.get_sessions_count() >= MAX_SSH_SHARING:
+#             raise ValidationError(f"The system has reached the maximum limit of {MAX_SSH_SHARING} SSH sharings for this session.")
+
+# @receiver(pre_save, sender=NotesData)
+# def check_note_session_limits(sender, instance, **kwargs):
+#     if instance.pk is None:  # Check if it's a new object being created
+#         total_sessions_count = NotesData.objects.count()
+#         if total_sessions_count >= MAX_NOTE_SESSIONS:
+#             raise ValidationError(f"The system has reached the maximum limit of {MAX_NOTE_SESSIONS} note sessions.")
+        
+#         if instance.get_sessions_count() >= MAX_NOTE_SHARING:
+#             raise ValidationError(f"The system has reached the maximum limit of {MAX_NOTE_SHARING} note sharings for this session.")
+
+@receiver(pre_save, sender=SessionsList)
+def check_sharing_limits(sender, instance, **kwargs):
+    if instance.pk is None:  # Check if it's a new object being created
+        content_type = ContentType.objects.get_for_model(instance.content_object.__class__, for_concrete_model=True)
+
+        total_sessions = SessionsList.objects.filter(
+            content_type=content_type,
+            user = instance.user
+        ).count()
+
+
+        if content_type.model == 'sshdata':
+            if total_sessions >= MAX_USER_SSH_SESSIONS:
+                raise ValidationError(f"User has reached the maximum limit of {MAX_USER_SSH_SESSIONS} SSH sessions.")
+
+        elif content_type.model == 'notesdata':
+            if total_sessions >= MAX_USER_NOTE_SESSIONS:
+                raise ValidationError(f"User has reached the maximum limit of {MAX_USER_NOTE_SESSIONS} note sessions.")
+        

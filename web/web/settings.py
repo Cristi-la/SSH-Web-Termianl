@@ -160,3 +160,16 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# SERVER GLOBAL LIMIT
+
+MAX_SSH_SESSIONS = 100
+MAX_NOTE_SESSIONS = 100
+
+MAX_USER_SSH_SESSIONS = 4 # DZIAŁA
+MAX_USER_NOTE_SESSIONS = 4 # DZIAŁA
+
+MAX_SSH_SHARING = 2
+MAX_NOTE_SHARING = 2
+

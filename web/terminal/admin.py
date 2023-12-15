@@ -3,7 +3,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import AccountData, SavedHost, SessionsList, SSHData, NotesData
 from django import forms
 from django.contrib import admin
-from django.forms import CharField, PasswordInput, TextInput
+from django.forms import CharField, PasswordInput
+from django.contrib.contenttypes.models import ContentType
 
 class SavedHostAdminForm(forms.ModelForm):
     password = CharField(widget=PasswordInput(), required=False, help_text='The password for accessing the saved host.')
@@ -20,6 +21,7 @@ admin.site.register(SavedHost, SavedHostsAdmin)
 
 
 class SavedHostsInline(admin.TabularInline):
+    form = SavedHostAdminForm
     model = SavedHost
     extra = 1
 
@@ -46,3 +48,30 @@ class SessionsListAdmin(admin.ModelAdmin):
     get_object_name.short_description = 'Object Name'
 
 admin.site.register(SessionsList, SessionsListAdmin)
+
+
+
+class BaseDataAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_at', 'updated_at', 'sessions_count', 'active_sessions_count')
+    search_fields = ('name',)
+    filter_horizontal = ('logs',)
+    readonly_fields = ('logs',)
+
+    def sessions_count(self, obj):
+        return obj.get_sessions_count()
+
+    def active_sessions_count(self, obj):
+        return obj.get_active_sessions_count()
+
+    sessions_count.short_description = 'Sessions Created'
+    active_sessions_count.short_description = 'Active Sessions'
+
+class NotesDataAdmin(BaseDataAdmin):
+    pass
+
+class SSHDataAdmin(BaseDataAdmin):
+    pass
+
+
+admin.site.register(NotesData, NotesDataAdmin)
+admin.site.register(SSHData, SSHDataAdmin)
