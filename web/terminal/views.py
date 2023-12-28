@@ -75,7 +75,6 @@ class TemplateCreateSession(ABC):
 class SSHDetailView(TemplateSession, DetailView):
     template_name  = 'terminal.html'
     model = SSHData
-    context_object_name = 'sshdata'
 
     def get_object(self, queryset=None):
         return SSHData.objects.get(pk=self.kwargs['pk'])  
@@ -161,5 +160,8 @@ class NoteDetailView(DetailView):
     template_name  = 'note.html'
     model = NotesData
     context_object_name = 'notedata'
+
+class TermianlView(TemplateView):
+    template_name  = 'terminal copy.html'
 
 
