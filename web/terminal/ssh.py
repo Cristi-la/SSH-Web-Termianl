@@ -45,9 +45,11 @@ class SSHModule:
     async def disconnect(self):
         for group_name, instance in SSHModule.instances.items():
             if instance is self:
+                print('delete one connection with: ', group_name)
                 SSHModule.active_connections[group_name] -= 1
 
                 if SSHModule.active_connections[group_name] == 0:
+                    print('No other connection for: ', group_name)
                     if self.channel:
                         self.channel.close()
                     if self.ssh:
@@ -60,13 +62,14 @@ class SSHModule:
 
     async def input_data(self, data):
         if not self.channel or not self.channel.active:
-            await self.send(text_data=json.dumps({'message': 'SSH channel is not active'}))
             return
 
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self.channel.send, data)
 
     async def read_data(self):
+        if not self.channel or not self.channel.active:
+            return
         loop = asyncio.get_event_loop()
         try:
             data = await loop.run_in_executor(None, self.channel.recv, 1024)
