@@ -45,11 +45,9 @@ class SSHModule:
     async def disconnect(self):
         for group_name, instance in SSHModule.instances.items():
             if instance is self:
-                print('delete one connection with: ', group_name)
                 SSHModule.active_connections[group_name] -= 1
 
                 if SSHModule.active_connections[group_name] == 0:
-                    print('No other connection for: ', group_name)
                     if self.channel:
                         self.channel.close()
                     if self.ssh:
