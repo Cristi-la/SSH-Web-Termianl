@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="{% static 'css/cli.css' %}">
     <link rel="stylesheet" href="{% static 'css/tabs.css' %}">
 
+    {% block stylesheet %}{% endblock %}
+
     
     {% load component_tags %}
 
@@ -26,6 +28,8 @@
 <body>
     {% block content %}{% endblock %}
 </body>
+
+{% block script %}{% endblock %}
 
 <!-- Channels hander -->
 <script type="text/javascript" src="{% static 'js/channels.js' %}"></script>

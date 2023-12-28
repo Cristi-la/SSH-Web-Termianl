@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView
+from django.views.generic.base import TemplateView
 from terminal.models import SSHData, NotesData
 
 class SSHDetailView(DetailView):
@@ -13,5 +14,8 @@ class NoteDetailView(DetailView):
     template_name  = 'note.html'
     model = NotesData
     context_object_name = 'notedata'
+
+class TermianlView(TemplateView):
+    template_name  = 'terminal.html'
 
 
