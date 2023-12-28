@@ -10,6 +10,7 @@ from web.settings import MAX_SSH_SESSIONS, MAX_NOTE_SESSIONS, MAX_NOTE_SHARING, 
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
+from abc import ABCMeta, abstractmethod
 
 class AccManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -73,7 +74,6 @@ class SavedHost(models.Model):
             return "~Config"
         return f"{self.hostname}"
     
-    
 # 
 #  SESSIONS DATA
 # 
@@ -87,10 +87,13 @@ class Log(models.Model):
     def __str__(self):
         return f"Log entry created at {self.created_at}"
 
-class BaseData(models.Model):
+
+# FIX m
+class AbstractModelMeta(ABCMeta, type(models.Model)):...
+class BaseData(models.Model, metaclass=AbstractModelMeta):
     log: Log
 
-    name = models.CharField(max_length=100, help_text='Name of the data.')
+    name = models.CharField(max_length=100, default='Session', help_text='Default name of the tab in fronend.')
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the data was created.')
     updated_at = models.DateTimeField(auto_now=True, help_text='The date and time when the data was last updated.')
     
@@ -100,6 +103,8 @@ class BaseData(models.Model):
     # User who created the session
     session_master = models.ForeignKey(AccountData, on_delete=models.CASCADE, null=True, blank=True, help_text='The user who created the session.')
 
+
+    sessions = GenericRelation('SessionsList', related_query_name='session')
 
     class Meta:
         abstract = True  # This makes BaseData an abstract model, preventing database table creation.
@@ -123,6 +128,19 @@ class BaseData(models.Model):
     def get_active_sessions_count(self):
         return self._get_session_count(is_active=True)
 
+    @abstractmethod
+    def close(self, request, *args, **kwargs):
+        '''
+        '''
+    
+    @abstractmethod
+    def open(self, request, *args, **kwargs):
+        '''
+        '''
+
+       
+
+
 class NotesData(BaseData):
     def __str__(self):
         return f"Note: {self.name}"
@@ -130,8 +148,44 @@ class NotesData(BaseData):
 class SSHData(BaseData):
     def __str__(self):
         return f"SSH Connection: {self.name}"
+    
+    def close(self):
+        # TODO: Close user session in consumers and SSHModule:
+
+        self.delete()
+
+    @classmethod
+    def open(cls, name, user, ip, username, password, private_key, passphrase):
+        ssh_data = cls.objects.create(
+            session_master=user,
+            # TODO: DODAJ DO MODELU JAKIES DODATKOWE POLA JAK POTRZEBUJESZ:
+            # ...W SSHData
+        )
+        ssh_data.save()
+
+        session = SessionsList.objects.create(
+            name = name,
+            user = user,
+            content_type=ContentType.objects.get_for_model(cls),
+            object_id=ssh_data.id
+        )
+
+        session.save()
+
+        log_entry = Log.objects.create(
+            log_text=f"Session created by {user.username} for SSHData: {ssh_data.name}",
+        )
+
+        log_entry.save()
+
+        # TODO: OPEN SSH session using: ip, username, password, private_key, passphrase
+
+        ssh_data.logs.add(log_entry)
+
+        return ssh_data
 
 class SessionsList(models.Model):
+    name = models.CharField(max_length=100, default='Session', help_text='Name of the tab in fronend.')
     user = models.ForeignKey(AccountData, on_delete=models.CASCADE, related_name='sessions', help_text='The user associated with the session.')
     sharing_enabled = models.BooleanField(default=False, help_text='Flag indicating if sharing is enabled for the session.')
     is_active = models.BooleanField(default=True, help_text='Flag indicating if the session is active.')
@@ -145,6 +199,10 @@ class SessionsList(models.Model):
     # Reverse relations to get SSHData and NotesData associated with this session
     ssh_sessions = GenericRelation(SSHData, related_query_name='session')
     notes = GenericRelation(NotesData, related_query_name='session')
+
+    class Meta:
+        # To session form the same user to Session Data can not exist
+        unique_together = ['user', 'content_type', 'object_id']
 
     def clean(self):
         content_type = self.content_type
@@ -162,6 +220,30 @@ class SessionsList(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s session {self.pk}"
+    
+    @classmethod
+    def join(cls, user, data_obj, name):
+        session = cls.objects.create(
+            name = name if name else data_obj.name,
+            user = user,
+            content_type=ContentType.objects.get_for_model(data_obj),
+            object_id=data_obj.id
+        )
+
+        session.save()
+
+        return session
+
+    def close(self):
+        self.delete()
+
+
+
+
+
+
+    
+
 
 
 

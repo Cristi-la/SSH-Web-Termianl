@@ -39,7 +39,7 @@ admin.site.register(AccountData, UserAdmin)
 
 
 class SessionsListAdmin(admin.ModelAdmin):
-    list_display = ('user', 'content_type', 'object_id', 'get_object_name', 'sharing_enabled', 'is_active')
+    list_display = ('pk','name', 'user', 'content_type', 'object_id', 'get_object_name', 'sharing_enabled', 'is_active')
     search_fields = ['user__username']
 
     def get_object_name(self, obj):
@@ -52,8 +52,8 @@ admin.site.register(SessionsList, SessionsListAdmin)
 
 
 class BaseDataAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_at', 'updated_at', 'sessions_count', 'active_sessions_count')
-    search_fields = ('name',)
+    list_display = ('pk', 'created_at', 'updated_at', 'sessions_count', 'active_sessions_count')
+    search_fields = ('pk','name',)
     filter_horizontal = ('logs',)
     readonly_fields = ('logs',)
 
