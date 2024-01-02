@@ -1,29 +1,40 @@
 import asyncio
 import json
-from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.consumer import AsyncConsumer
-from .ssh import SSHModule
+from terminal.ssh import SSHModule
+from terminal.models import SessionsList, BaseData
+from channels.db import database_sync_to_async
 
-class TerminalConsumer(WebsocketConsumer):
-    def connect(self):
-        self.accept()
-        self.send(text_data=json.dumps(
-            {
-                'giga': 'kox',
-                'moja': 'mama',
-            }
-        )
-        )
-        #  When user connects
-        # return super().connect()
+class SessionCosumer(AsyncWebsocketConsumer):
+    @database_sync_to_async
+    def get_session(self, session_id):
+        print(session_id)
+        return {}
+        # obj = SessionsList.objects.select_related('user').get(pk=session_id)
+        # print(obj.content_object)
+        # return SessionsList.objects.get(pk=session_id)
 
-    # async def receive(self, text_data=None, bytes_data=None):
-    #     # When user send data
-    #     return super().receive(text_data, bytes_data)
+    async def connect(self, *args, **kwargs):
+        # await self.channel_layer.group_add('sxddsds', self.channel_name)
+        await self.accept()
+        # session_id = self.scope['url_route']['kwargs']['session_id']
 
-    # async def disconnect(self, code):
-    #     # When user disconect
-    #     return super().disconnect(code)
+        # if not session_id:
+        #     await self.close()
+
+        # try:
+        #     # obj = await self.get_session(session_id)
+        #     # if obj.user.pk == self.scope['user'].pk:
+        #     await self.channel_layer.group_add('test'+str(111), self.channel_name)
+        #     await self.accept()
+
+        # except SessionsList.DoesNotExist:
+        #     pass
+        # except Exception as e:
+        #     print(e)
+        #     await self.close()
+
 
 
 class SshConsumer(AsyncWebsocketConsumer):

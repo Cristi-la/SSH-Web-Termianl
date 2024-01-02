@@ -4,7 +4,7 @@ from .models import AccountData, SavedHost, SessionsList, SSHData, NotesData
 from django import forms
 from django.contrib import admin
 from django.forms import CharField, PasswordInput
-from django.contrib.contenttypes.models import ContentType
+
 
 class SavedHostAdminForm(forms.ModelForm):
     password = CharField(widget=PasswordInput(), required=False, help_text='The password for accessing the saved host.')
@@ -52,7 +52,7 @@ admin.site.register(SessionsList, SessionsListAdmin)
 
 
 class BaseDataAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'created_at', 'updated_at', 'sessions_count', 'active_sessions_count')
+    list_display = ('pk', 'session_master','created_at', 'updated_at', 'sessions_count', 'active_sessions_count')
     search_fields = ('pk','name',)
     filter_horizontal = ('logs',)
     readonly_fields = ('logs',)
@@ -67,10 +67,11 @@ class BaseDataAdmin(admin.ModelAdmin):
     active_sessions_count.short_description = 'Active Sessions'
 
 class NotesDataAdmin(BaseDataAdmin):
-    pass
+
+    ...
 
 class SSHDataAdmin(BaseDataAdmin):
-    pass
+    ...
 
 
 admin.site.register(NotesData, NotesDataAdmin)

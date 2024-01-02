@@ -20,16 +20,10 @@ NO_MANDATORY_PARAMS = BaseApiCallReponse(
     status = 400 # HTTP status code for Bad Request
 ).to_json_response()
 
-SYSTEM_SESSION_DELETED = BaseApiCallReponse(
+SESSION_CLOSED = BaseApiCallReponse(
     success=True,
-    message='System session deleted. All related user\'s sessions(shared) also delted',
+    message='Session deleted.',
     status = 200 #
-).to_json_response()
-
-USER_SESSION_DELETED = BaseApiCallReponse(
-    success=True,
-    message='User session deleted.',
-    status = 200 
 ).to_json_response()
 
 SESSION_CREATED = BaseApiCallReponse(

@@ -1,0 +1,104 @@
+<pre>
+
+    <b>SSHData</b>: "{{object}}"
+            ID "{{object.pk}}"
+
+
+    <b>SessionsList</b>: "{{user_object}}"
+            ID "{{user_object.pk}}" --> <i>this will be use to get websocket data</i>
+
+</pre>
+{% load static %} 
+
+
+
+
+
+<button id="close">Close connn</button>
+<!-- <button id="join">Join connn</button> -->
+
+
+<script>
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function sendJsonData(method, data) {
+        var currentUrl = window.location.href;
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, currentUrl, true);
+        
+        // Set the CSRF token in the request header
+        xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                console.log('Request successful:', xhr.responseText);
+            } else {
+                console.error('Error or unexpected response:', xhr.status, xhr.statusText);
+            }
+        };
+
+        var jsonData = JSON.stringify(data);
+        xhr.send(jsonData);
+    }
+
+    document.getElementById('close').addEventListener('click', ()=>{
+        sendJsonData('DELETE', {});
+    })
+
+    // document.getElementById('join').addEventListener('click', ()=>{
+    //     sendJsonData('POST', {});
+    // })
+
+
+    // const url = `ws://${window.location.host}/ws/session/{{user_object.pk}}`;
+
+    // const serverSocket = new WebSocket(url);
+    // serverSocket.onmessage = function(e){
+    //     let data = JSON.parse(e.data);
+    //     console.log('Data', data);
+    // }
+
+    // serverSocket.onopen = function (event) {
+    // console.log("WebSocket connection opened:", event);
+    // };
+
+    // serverSocket.onmessage = function (event) {
+    //     let data = JSON.parse(event.data);
+    //     console.log('Data', data);
+    // };
+
+    // serverSocket.onclose = function (event) {
+    //     console.log("WebSocket connection closed:", event);
+    // };
+
+
+
+
+</script>
+
+
+<link rel="stylesheet" href="{% static 'css/xterm.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/terminal.css' %}">
+
+<main>
+    <div id="container">
+        <div id="terminal"></div>
+    </div>
+</main>
+<script type="text/javascript" src="{% static 'js/tools/xterm.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/tools/xterm-addon-fit.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>

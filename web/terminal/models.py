@@ -1,39 +1,34 @@
+from typing import Self
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from colorfield.fields import ColorField
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.http import Http404
 from encrypted_model_fields.fields import EncryptedCharField
-from django.core.exceptions import ValidationError
-from web.settings import MAX_SSH_SESSIONS, MAX_NOTE_SESSIONS, MAX_NOTE_SHARING, MAX_SSH_SHARING, MAX_USER_NOTE_SESSIONS, MAX_USER_SSH_SESSIONS
-from django.db.models.signals import pre_save
-from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from abc import ABCMeta, abstractmethod
 
 class AccManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError('The Email field must be set')
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+    def create_user(self, username, password=None, **extra_fields):
+        if not username:
+            raise ValueError('The username field must be set')
+        user = self.model(username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(self, username, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(username, password, **extra_fields)
 
 class AccountData(AbstractBaseUser, PermissionsMixin):
     saved_hosts: 'SavedHost'
     sessions: 'SessionsList'
     sessions: 'SessionsList'
 
-    email = models.EmailField(max_length=40, unique=True, help_text='The email address of the user.')
+    email = models.EmailField(max_length=40, unique=False, help_text='The email address of the user.')
     first_name = models.CharField(max_length=30, blank=True, null=True, help_text='The first name of the user.')
     last_name = models.CharField(max_length=30, blank=True, null=True, help_text='The last name of the user.')
     username = models.CharField(max_length=30, unique=True, help_text='The username of the user.')
@@ -45,7 +40,7 @@ class AccountData(AbstractBaseUser, PermissionsMixin):
     objects = AccManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
+    # REQUIRED_FIELDS = ['email']
 
     def __str__(self):
         return self.username
@@ -85,7 +80,7 @@ class Log(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the log entry was created.')
 
     def __str__(self):
-        return f"Log entry created at {self.created_at}"
+        return f"Log {self.created_at}: {self.log_text}"
 
 
 # FIX m
@@ -101,9 +96,9 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
     logs = models.ManyToManyField(Log, related_name='%(class)s_logs', blank=True, help_text='Logs related to this data.')
 
     # User who created the session
-    session_master = models.ForeignKey(AccountData, on_delete=models.CASCADE, null=True, blank=True, help_text='The user who created the session.')
-
-
+    session_master = models.ForeignKey(AccountData, on_delete=models.CASCADE, null=False, blank=False, help_text='The user who created the session.')
+    session_lock = models.BooleanField(default=True, help_text='This flags informs if other session users (except master) can iteract with terminal')
+    session_open = models.BooleanField(default=False, help_text='This flags informs if other users can join this session')
     sessions = GenericRelation('SessionsList', related_query_name='session')
 
     class Meta:
@@ -129,12 +124,12 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
         return self._get_session_count(is_active=True)
 
     @abstractmethod
-    def close(self, request, *args, **kwargs):
+    def close(self, request, *args, **kwargs) -> None:
         '''
         '''
     
     @abstractmethod
-    def open(self, request, *args, **kwargs):
+    def open(self, request, *args, **kwargs) -> Self:
         '''
         '''
 
@@ -142,10 +137,14 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
 
 
 class NotesData(BaseData):
+    # logs = GenericRelation(Log, related_query_name='notesdata_logs', blank=True, help_text='Logs related to this notes data.')
+
     def __str__(self):
         return f"Note: {self.name}"
 
 class SSHData(BaseData):
+    # logs = GenericRelation(Log, related_query_name='sshdata_logs', blank=True, help_text='Logs related to this SSH data.')
+
     def __str__(self):
         return f"SSH Connection: {self.name}"
     
@@ -178,6 +177,8 @@ class SSHData(BaseData):
 
         log_entry.save()
 
+        # SERVER --> REMOTE PC. reutrn True
+
         # TODO: OPEN SSH session using: ip, username, password, private_key, passphrase
 
         ssh_data.logs.add(log_entry)
@@ -195,10 +196,6 @@ class SessionsList(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, limit_choices_to={'model__in': ['sshdata', 'notesdata']})
     object_id = models.PositiveIntegerField(null=False)
     content_object = GenericForeignKey('content_type', 'object_id')
-
-    # Reverse relations to get SSHData and NotesData associated with this session
-    ssh_sessions = GenericRelation(SSHData, related_query_name='session')
-    notes = GenericRelation(NotesData, related_query_name='session')
 
     class Meta:
         # To session form the same user to Session Data can not exist
@@ -223,69 +220,16 @@ class SessionsList(models.Model):
     
     @classmethod
     def join(cls, user, data_obj, name):
-        session = cls.objects.create(
-            name = name if name else data_obj.name,
+        session, _ = cls.objects.get_or_create(
             user = user,
             content_type=ContentType.objects.get_for_model(data_obj),
             object_id=data_obj.id
         )
 
+        session.name = name if name else data_obj.name
         session.save()
 
         return session
 
     def close(self):
         self.delete()
-
-
-
-
-
-
-    
-
-
-
-
-# RECEIVERS
-    
-
-# @receiver(pre_save, sender=SSHData)
-# def check_ssh_session_limits(sender, instance, **kwargs):
-#     if instance.pk is None:  # Check if it's a new object being created
-#         total_sessions_count = SSHData.objects.count()
-#         if total_sessions_count >= MAX_SSH_SESSIONS:
-#             raise ValidationError(f"The system has reached the maximum limit of {MAX_SSH_SESSIONS} SSH sessions.")
-        
-#         if instance.get_sessions_count() >= MAX_SSH_SHARING:
-#             raise ValidationError(f"The system has reached the maximum limit of {MAX_SSH_SHARING} SSH sharings for this session.")
-
-# @receiver(pre_save, sender=NotesData)
-# def check_note_session_limits(sender, instance, **kwargs):
-#     if instance.pk is None:  # Check if it's a new object being created
-#         total_sessions_count = NotesData.objects.count()
-#         if total_sessions_count >= MAX_NOTE_SESSIONS:
-#             raise ValidationError(f"The system has reached the maximum limit of {MAX_NOTE_SESSIONS} note sessions.")
-        
-#         if instance.get_sessions_count() >= MAX_NOTE_SHARING:
-#             raise ValidationError(f"The system has reached the maximum limit of {MAX_NOTE_SHARING} note sharings for this session.")
-
-@receiver(pre_save, sender=SessionsList)
-def check_sharing_limits(sender, instance, **kwargs):
-    if instance.pk is None:  # Check if it's a new object being created
-        content_type = ContentType.objects.get_for_model(instance.content_object.__class__, for_concrete_model=True)
-
-        total_sessions = SessionsList.objects.filter(
-            content_type=content_type,
-            user = instance.user
-        ).count()
-
-
-        if content_type.model == 'sshdata':
-            if total_sessions >= MAX_USER_SSH_SESSIONS:
-                raise ValidationError(f"User has reached the maximum limit of {MAX_USER_SSH_SESSIONS} SSH sessions.")
-
-        elif content_type.model == 'notesdata':
-            if total_sessions >= MAX_USER_NOTE_SESSIONS:
-                raise ValidationError(f"User has reached the maximum limit of {MAX_USER_NOTE_SESSIONS} note sessions.")
-        
