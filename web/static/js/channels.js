@@ -1,6 +1,5 @@
-const url = `ws://${window.location.host}/ws/socket-server/`;
-const groupName = '1';
-const secondUrl = `ws://${window.location.host}/ws/ssh-socket/?group=${groupName}`;
+const url = `ws://${window.location.host}/ws/session/${window.objectPk}`;
+const secondUrl = `ws://${window.location.host}/ws/ssh/${window.objectPk}`;
 
 const serverSocket = new WebSocket(url);
 
@@ -9,7 +8,11 @@ const terminalManager = new TerminalManager();
 
 serverSocket.onmessage = function(e){
     let data = JSON.parse(e.data);
-    console.log('Data', data);
+    console.log('Data: ', data.message);
+}
+
+serverSocket.onopen = function () {
+    console.log('connected');
 }
 
 sshServerSocket.onmessage = function(e){
