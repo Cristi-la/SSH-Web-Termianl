@@ -1,5 +1,6 @@
 import socket
 import paramiko
+from paramiko.ssh_exception import AuthenticationException, SSHException, BadHostKeyException, NoValidConnectionsError
 import asyncio
 import json
 
@@ -11,9 +12,26 @@ class SSHModule:
     @classmethod
     async def connect_or_create_instance(cls, group_name, host, username, password, port=None):
         instance = cls()
-        ssh = await instance.__connect(host, username, password, port)
+        try:
+            ssh = await instance.__connect(host, username, password, port)
+        except BadHostKeyException:
+            raise
+        except AuthenticationException:
+            raise
+        except socket.error:
+            raise
+        except NoValidConnectionsError:
+            raise
+        except SSHException:
+            raise
+        except Exception:
+            raise
+
         if group_name not in cls.instances:
-            channel = await cls.__open_channel(ssh)
+            try:
+                channel = await cls.__open_channel(ssh)
+            except SSHException:
+                raise
             cls.instances[group_name] = ssh
             cls.channels[group_name] = channel
             cls.active_connections[group_name] = 1
@@ -22,19 +40,17 @@ class SSHModule:
 
     @staticmethod
     async def __connect(host, username, password, port):
-        try:
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            loop = asyncio.get_running_loop()
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        loop = asyncio.get_running_loop()
 
-            if port is None:
-                port = 22
+        if port is None:
+            port = 22
 
-            await loop.run_in_executor(None, ssh.connect, host, port, username, password)
+        await loop.run_in_executor(None, ssh.connect, host, port, username, password)
 
-            return ssh
-        except Exception as e:
-            return {'error': str(e)}
+        return ssh
+
 
     @staticmethod
     async def __open_channel(ssh):
@@ -73,7 +89,7 @@ class SSHModule:
         channel = cls.channels.get(group_name)
 
         if not channel or not channel.active:
-            return
+            raise Exception("Channel closed. Try reconnecting")
 
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, channel.send, data)

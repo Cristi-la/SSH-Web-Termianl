@@ -65,8 +65,11 @@ class SshConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         # TODO: To be changed when we determine frontend solution
-        # await SSHModule.connect_or_create_instance(self.group_name, 'host', 'username', 'password')
-
+        try:
+            await SSHModule.connect_or_create_instance(self.group_name, '127.0.0.1', 'username', 'password')
+        except Exception as e:
+            # print("error: ", e)
+            await self.send_group_message_inclusive(e)
         self.start_read()
 
     async def disconnect(self, close_code):
@@ -77,10 +80,21 @@ class SshConsumer(AsyncWebsocketConsumer):
 
         data = text_data_json.get('data')
         if data:
-            await SSHModule.send(self.group_name, data)
+            try:
+                await SSHModule.send(self.group_name, data)
+            except Exception as e:
+                # print("error: ", e)
+                await self.send_group_message_inclusive(e)
             self.start_read()
 
     async def send_group_message_inclusive(self, message):
+        if isinstance(message, Exception):
+            message = {
+                'type': 'error',
+                'error_message': str(message),
+                'error_details': repr(message)
+            }
+
         await self.channel_layer.group_send(
             self.group_name,
             {
@@ -106,6 +120,7 @@ class SshConsumer(AsyncWebsocketConsumer):
                 break
 
             data = await SSHModule.read(self.group_name)
+
             if data is not None:
                 no_data_duration = 0
                 await self.send_group_message_inclusive(data)
