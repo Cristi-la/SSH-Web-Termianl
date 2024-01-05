@@ -15,15 +15,18 @@ class SessionCosumer(AsyncWebsocketConsumer):
         # return SessionsList.objects.get(pk=session_id)
 
     async def connect(self, *args, **kwargs):
-        # await self.channel_layer.group_add('sxddsds', self.channel_name)
+        self.session_id = self.scope['url_route']['kwargs']['session_id']+'test'
+        await self.channel_layer.group_add(self.session_id, self.channel_name)
         await self.accept()
+        await self.send_group_message_inclusive('test')
         # session_id = self.scope['url_route']['kwargs']['session_id']
 
         # if not session_id:
         #     await self.close()
 
         # try:
-        #     # obj = await self.get_session(session_id)
+        #     # obj = await self.
+        #     (session_id)
         #     # if obj.user.pk == self.scope['user'].pk:
         #     await self.channel_layer.group_add('test'+str(111), self.channel_name)
         #     await self.accept()
@@ -34,65 +37,63 @@ class SessionCosumer(AsyncWebsocketConsumer):
         #     print(e)
         #     await self.close()
 
+    async def send_group_message_inclusive(self, message):
+        await self.channel_layer.group_send(
+            self.session_id,
+            {
+                'type': 'group_message_inclusive',
+                'message': message
+            }
+        )
+
+    async def group_message_inclusive(self, event):
+        await self.send(text_data=json.dumps({
+            'message': event['message']
+        }))
 
 
 class SshConsumer(AsyncWebsocketConsumer):
-    sessions = {}
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ssh_module = None
-        # TODO: group_name ready for future implementation.
-        # TODO: Last time we talked you mentioned that each session will have unique identifier. It can be used here.
-        self.group_name = '1'
-        self.read_ssh_task = None
-
-    @classmethod
-    async def get_or_create_session(cls, group_name, host, username, password, port=None):
-        return await SSHModule.get_or_create_instance(group_name, host, username, password, port)
+        self.group_name = None
+        self.read_task = None
 
     async def connect(self):
+        self.group_name = self.scope['url_route']['kwargs']['group_name']
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
         # TODO: To be changed when we determine frontend solution
-        self.ssh_module = await self.get_or_create_session(self.group_name, 'host', 'username', 'password')
-
-        self.start_read_ssh_task()
+        try:
+            await SSHModule.connect_or_create_instance(self.group_name, '127.0.0.1', 'username', 'password')
+        except Exception as e:
+            # print("error: ", e)
+            await self.send_group_message_inclusive(e)
+        self.start_read()
 
     async def disconnect(self, close_code):
-        await self.ssh_module.disconnect()
+        await SSHModule.disconnect(self.group_name)
 
     async def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
 
         data = text_data_json.get('data')
         if data:
-            await self.ssh_module.input_data(data)
-            self.start_read_ssh_task()
-
-    async def ssh_message(self, event):
-        message = event['message']
-        await self.send(text_data=json.dumps({'message': message}))
-
-    # TODO: If not used later on then to be deleted, for now not sure so I left it commented.
-    # async def send_group_message(self, message):
-    #     await self.channel_layer.group_send(
-    #         self.group_name,
-    #         {
-    #             'type': 'group_message',
-    #             'message': message,
-    #             'sender_channel_name': self.channel_name
-    #         }
-    #     )
-    #
-    # async def group_message(self, event):
-    #     if event['sender_channel_name'] != self.channel_name:
-    #         await self.send(text_data=json.dumps({
-    #             'message': event['message']
-    #         }))
+            try:
+                await SSHModule.send(self.group_name, data)
+            except Exception as e:
+                # print("error: ", e)
+                await self.send_group_message_inclusive(e)
+            self.start_read()
 
     async def send_group_message_inclusive(self, message):
+        if isinstance(message, Exception):
+            message = {
+                'type': 'error',
+                'error_message': str(message),
+                'error_details': repr(message)
+            }
+
         await self.channel_layer.group_send(
             self.group_name,
             {
@@ -106,18 +107,19 @@ class SshConsumer(AsyncWebsocketConsumer):
             'message': event['message']
         }))
 
-    def start_read_ssh_task(self):
-        if self.read_ssh_task is None or self.read_ssh_task.done():
-            self.read_ssh_task = asyncio.create_task(self.read_ssh())
+    def start_read(self):
+        if self.read_task is None or self.read_task.done():
+            self.read_task = asyncio.create_task(self.read())
 
-    async def read_ssh(self):
+    async def read(self):
         no_data_duration = 0
 
         while True:
             if no_data_duration >= 5:
                 break
 
-            data = await self.ssh_module.read_data()
+            data = await SSHModule.read(self.group_name)
+
             if data is not None:
                 no_data_duration = 0
                 await self.send_group_message_inclusive(data)

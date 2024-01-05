@@ -3,7 +3,7 @@
 {% load static %}  {# Load the static tag #}
 
 {% block stylesheet %}
-    <link rel="stylesheet" href="{% static 'css/xterm.min.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/Xterm/xterm.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
 {% endblock stylesheet %}
 
@@ -16,7 +16,7 @@
 {% endblock content %}
 
 {% block script %}
-    <script type="text/javascript" src="{% static 'js/tools/xterm.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/tools/xterm-addon-fit.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/Xterm/xterm.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/Xterm/xterm-addon-fit.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
 {% endblock script %}
