@@ -9,10 +9,9 @@ from channels.db import database_sync_to_async
 class SessionCosumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_session(self, session_id):
-        print(session_id)
-        return {}
-        # obj = SessionsList.objects.select_related('user').get(pk=session_id)
-        # print(obj.content_object)
+        obj: SessionsList = SessionsList.objects.select_related('user').get(pk=session_id) # slave
+        data_obj: BaseData = obj.content_object # master
+        
         # return SessionsList.objects.get(pk=session_id)
 
     async def connect(self, *args, **kwargs):

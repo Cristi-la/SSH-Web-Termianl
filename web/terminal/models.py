@@ -137,12 +137,14 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
 
 
 class NotesData(BaseData):
+    TASK_READER = False
     # logs = GenericRelation(Log, related_query_name='notesdata_logs', blank=True, help_text='Logs related to this notes data.')
 
     def __str__(self):
         return f"Note: {self.name}"
 
 class SSHData(BaseData):
+    TASK_READER = True
     # logs = GenericRelation(Log, related_query_name='sshdata_logs', blank=True, help_text='Logs related to this SSH data.')
 
     def __str__(self):
