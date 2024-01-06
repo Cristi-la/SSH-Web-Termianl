@@ -178,4 +178,9 @@ MAX_USER_NOTE_SESSIONS = 64 # DZIAŁA
 MAX_SSH_SHARING = 2 # DZIAŁA
 MAX_NOTE_SHARING = 2 # DZIAŁA
 
-
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}

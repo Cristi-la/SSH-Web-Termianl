@@ -10,7 +10,7 @@ class SSHModule:
     active_connections = {}
 
     @classmethod
-    async def connect_or_create_instance(cls, group_name, host, username, password, port=None):
+    async def connect_or_create_instance(cls, group_name, host, username, password, port=None, pkey=None, passphrase=None):
         instance = cls()
         try:
             ssh = await instance.__connect(host, username, password, port)
@@ -50,7 +50,6 @@ class SSHModule:
         await loop.run_in_executor(None, ssh.connect, host, port, username, password)
 
         return ssh
-
 
     @staticmethod
     async def __open_channel(ssh):

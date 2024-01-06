@@ -1,43 +1,49 @@
 import asyncio
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.consumer import AsyncConsumer
-from terminal.ssh import SSHModule
 from terminal.models import SessionsList, BaseData
 from channels.db import database_sync_to_async
 
 class SessionCosumer(AsyncWebsocketConsumer):
-#     @database_sync_to_async
-#     def get_session(self, session_id):
-#         obj: SessionsList = SessionsList.objects.select_related('user').get(pk=session_id) # slave
-#         data_obj: BaseData = obj.content_object # master
-        
-#         # return SessionsList.objects.get(pk=session_id)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.session_id = None
+        self.read_task = None
+
+    @database_sync_to_async
+    def __get_session(self):
+        obj: SessionsList = SessionsList.objects.select_related('user', 'content_type').get(pk=self.session_id) # slave
+        data_obj: BaseData = obj.content_object # master
+
+        return obj, data_obj
 
     async def connect(self, *args, **kwargs):
-        self.session_id = self.scope['url_route']['kwargs']['session_id']+'test'
+        self.session_id = self.scope['url_route']['kwargs']['session_id']
         await self.channel_layer.group_add(self.session_id, self.channel_name)
         await self.accept()
-        await self.send_group_message_inclusive('test')
-        # session_id = self.scope['url_route']['kwargs']['session_id']
 
-        # if not session_id:
-        #     await self.close()
+        obj, data_obj = await self.__get_session()
 
-        # try:
-        #     # obj = await self.
-        #     (session_id)
-        #     # if obj.user.pk == self.scope['user'].pk:
-        #     await self.channel_layer.group_add('test'+str(111), self.channel_name)
-        #     await self.accept()
+        if obj.content_type.model == 'sshdata':
+            try:
+                await data_obj.check_cache_and_update_flag()
+                await data_obj.connect()
+            except Exception as e:
+                await self.send_group_message_inclusive(e)
+            self.start_read()
 
-        # except SessionsList.DoesNotExist:
-        #     pass
-        # except Exception as e:
-        #     print(e)
-        #     await self.close()
+    async def disconnect(self, code):
+        obj, data_obj = await self.__get_session()
+
+        if obj.content_type.model == 'sshdata':
+            await data_obj.disconnect()
 
     async def send_group_message_inclusive(self, message):
+        if isinstance(message, Exception):
+            message = {'type': 'error', 'error_message': str(message)}
+        else:
+            message = {'type': 'info', 'content': message}
+
         await self.channel_layer.group_send(
             self.session_id,
             {
@@ -51,61 +57,19 @@ class SessionCosumer(AsyncWebsocketConsumer):
             'message': event['message']
         }))
 
-
-class SshConsumer(AsyncWebsocketConsumer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.group_name = None
-        self.read_task = None
-
-    async def connect(self):
-        self.group_name = self.scope['url_route']['kwargs']['group_name']
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
-        await self.accept()
-
-        # TODO: To be changed when we determine frontend solution
-        try:
-            await SSHModule.connect_or_create_instance(self.group_name, '127.0.0.1', 'username', 'password')
-        except Exception as e:
-            # print("error: ", e)
-            await self.send_group_message_inclusive(e)
-        self.start_read()
-
-    async def disconnect(self, close_code):
-        await SSHModule.disconnect(self.group_name)
-
     async def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
 
         data = text_data_json.get('data')
         if data:
-            try:
-                await SSHModule.send(self.group_name, data)
-            except Exception as e:
-                # print("error: ", e)
-                await self.send_group_message_inclusive(e)
-            self.start_read()
+            obj, data_obj = await self.__get_session()
 
-    async def send_group_message_inclusive(self, message):
-        if isinstance(message, Exception):
-            message = {
-                'type': 'error',
-                'error_message': str(message),
-                'error_details': repr(message)
-            }
-
-        await self.channel_layer.group_send(
-            self.group_name,
-            {
-                'type': 'group_message_inclusive',
-                'message': message
-            }
-        )
-
-    async def group_message_inclusive(self, event):
-        await self.send(text_data=json.dumps({
-            'message': event['message']
-        }))
+            if obj.content_type.model == 'sshdata':
+                try:
+                    await data_obj.send(data)
+                except Exception as e:
+                    await self.send_group_message_inclusive(e)
+                self.start_read()
 
     def start_read(self):
         if self.read_task is None or self.read_task.done():
@@ -118,8 +82,10 @@ class SshConsumer(AsyncWebsocketConsumer):
             if no_data_duration >= 5:
                 break
 
-            data = await SSHModule.read(self.group_name)
+            obj, data_obj = await self.__get_session()
 
+            if obj.content_type.model == 'sshdata':
+                data = await data_obj.read()
             if data is not None:
                 no_data_duration = 0
                 await self.send_group_message_inclusive(data)
