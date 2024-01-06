@@ -27,23 +27,23 @@
 
         <h4 class="h4 mb-3 fw-normal" style="color:var(--slate-400)">Please sign in</h4>
         <div class="form-floating mb-3">
-            <input style="color:var(--slate-300)" type="text" class="fst-italic form-control bg-dark border-slate-600-1" id="floatingInput" autocomplete="username" name="username"
+            <input  type="text" class="fst-italic form-control" id="floatingInput" autocomplete="username" name="username"
                 value="{% if username %}{{username}}{% endif %}"  placeholder="Username"  required>
             <label for="floatingInput">Username</label>
         </div>
         <div class="form-floating mb-3">
-            <input type="password"  style="color:var(--slate-300)" placeholder="Password" class="form-control bg-dark border-slate-600-1" name="password" autocomplete="current-password"
+            <input type="password"   placeholder="Password" class="form-control" name="password" autocomplete="current-password"
                 id="floatingPassword" required>
             <label for="floatingPassword">Password</label>
         </div>
 
-        <div class="checkbox mb-3">
-            <label style="color: var(--slate-500);" title="Keep your account login, until you logout on this computer">
-                <input type="checkbox" value="1" class="form-check-input bg-dark border-slate-700-1" name="remember_me" {% if remember_me %}checked{% endif %}
-                    autocomplete="off"  /> Remember me
+        <div class="form-check mb-3">
+            <label class="form-check-label" title="Keep your account login, until you logout on this computer">
+                <input type="checkbox" value="1" class="form-check-input" name="remember_me" {% if remember_me %}checked{% endif %}
+                    autocomplete="off" /> Remember me
             </label>
         </div>
-        <button class="w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">Sign in</button>
+        <button class="w-100 btn btn-lg btn-dark rounded-pill border-slate-700 bg-slate-800" type="submit">Sign in</button>
 
         {% endif %}
     </form>

@@ -3,18 +3,18 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import AccountData, SavedHost, SessionsList, SSHData, NotesData
 from django import forms
 from django.contrib import admin
-from django.forms import CharField, PasswordInput
+from django.forms import CharField, PasswordInput, Textarea
 
 
 class SavedHostAdminForm(forms.ModelForm):
     password = CharField(widget=PasswordInput(), required=False, help_text='The password for accessing the saved host.')
-    passphrase = CharField(widget=PasswordInput(), required=False,  help_text='The passphrase for the private key (if applicable).')
+    passphrase = CharField(widget=Textarea(), required=False,  help_text='The passphrase for the private key (if applicable).')
     private_key = CharField(widget=PasswordInput(), required=False,  help_text='The private key for SSH access (if applicable).')
 
 class SavedHostsAdmin(admin.ModelAdmin):
     form = SavedHostAdminForm
-    list_display = ('hostname', 'ip_address_v4', 'ip_address_v6', 'username', 'user', 'created_at', 'updated_at')
-    search_fields = ('hostname', 'ip_address_v4', 'ip_address_v6', 'username', 'user__username')
+    list_display = ('name', 'hostname', 'ip', 'username', 'user', 'created_at', 'updated_at')
+    search_fields = ('name','hostname', 'ip', 'username', 'user__username')
 
 admin.site.register(SavedHost, SavedHostsAdmin)
 

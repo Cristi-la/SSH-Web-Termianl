@@ -85,6 +85,10 @@ function emitCloseEvent(session_id){
     emitSingleEvent('removeElementsForSession', [session_id])
 }
 
+// TODO IMPLEMENT IN FORMS....
+function updateElementForSessionEvent(current_id, session_id, name){
+    emitSingleEvent('updateElementForSession', [current_id, session_id, name])
+}
 
 // window.addEventListener("load", (e) => {
 //     document.querySelectorAll(ELEMENT_ID_CLOSE).forEach((element) => {

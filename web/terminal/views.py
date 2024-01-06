@@ -85,8 +85,10 @@ class SSHCreateView(TemplateCreateSession): #DONE
         if form.is_valid():
             self.object = SSHData.open(
                 user=self.request.user,
-                **form.cleaned_data
+                **form.cleaned_data,
+                save = bool(self.request.POST.get('submit', 'open') == 'save'),
             )
+
 
             return redirect('ssh.detail', pk=self.object.pk)
         

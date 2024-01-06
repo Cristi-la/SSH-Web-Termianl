@@ -4,6 +4,7 @@ from  terminal.views import SSHDetailView, NoteDetailView, SSHCreateView, Termia
 urlpatterns = [
     path('create/', TerminalCreatView.as_view(), name='create'),
     path('terminal/', TermianlView.as_view(), name='terminal'),
+    path('', TermianlView.as_view(), name='terminal'),
 
     path('ssh/<int:pk>/', SSHDetailView.as_view(), name='ssh.detail'),
     path('ssh/create/', SSHCreateView.as_view(), name='ssh.create'),

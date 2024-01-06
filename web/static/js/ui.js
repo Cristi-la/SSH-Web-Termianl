@@ -29,6 +29,15 @@ function removeTabFromTabList(session_id) {
     if (buttonToRemove) buttonToRemove.parentNode.removeChild(buttonToRemove);
 }
 
+function updateTabToTabList(current_id, session_id, name){
+  const buttonToUpdate = document.getElementById(`nav-${session_id}-tab`);
+  if (!buttonToRemove) return;
+
+  if (current_id != session_id) buttonToUpdate.id = `nav-${session_id}-tab`
+  if (name) button.textContent = name;
+
+}
+
 
 function addPanelTabToPanels(session_id, url) {
     if (document.getElementById(`session-${session_id}`))  return;
@@ -63,7 +72,12 @@ function removePanelFromTabPanels(session_id) {
     if (tabPane)  tabPane.remove(tabPane);
 }
 
+function updatePanelFromTabPanels(current_id, session_id){
+  const tabPane = document.getElementById(`session-${session_id}`);
+  if (!tabPane) return;
 
+  if (current_id != session_id) tabPane.id = `nav-${session_id}-tab`
+}
 
 // GENERATE SESSION ELEMENTS
 function addElementsForSession(session) {
@@ -111,6 +125,11 @@ function chooseLastElementForSessions(sessions) {
     chooseElementForSession(
         sessions[sessions.length-1].pk
     );
+}
+
+function updateElementForSession(current_id, session_id, name){
+  updateTabToTabList(current_id, session_id, name)
+  updatePanelFromTabPanels(current_id, session_id, name)
 }
 
 function addCreateTabPanels(url){

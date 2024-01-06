@@ -12,12 +12,22 @@
 
 {% block content %}
 
-<main style="z-index: 10" class="form-signin text-center">
-    <form method="post" class="p-4" action="{{action}}">
-        {% csrf_token %}
-        {% bootstrap_form form %}
-        <button class="btn btn-success" type="submit">Submit</button>
-    </form>
+<main style="z-index: 10" class="">
+    <div class="container-sm">
+        <form method="post" class="p-4" action="{{action}}">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                {% bootstrap_label field.label %}
+                {% bootstrap_field field show_label=False  %}
+                </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-center">
+                {{ form.form_buttons }}
+            </div>
+        </form>
+    </div>
 </main>
 
 

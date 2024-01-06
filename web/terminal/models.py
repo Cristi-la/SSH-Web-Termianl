@@ -47,10 +47,18 @@ class AccountData(AbstractBaseUser, PermissionsMixin):
         return self.username
 
 class SavedHost(models.Model):
+    COLOR_PALETTE = [
+        ("#BA1C1C", "Correl Red", ),
+        ("#2E9329", "Forest Green", ),
+        ("#248BC2", "Deep Blue", ),
+        ("#BD2DB6", "Steel Pink", ),
+        ("#E0A61E", "Harvest Gold", ),
+    ]
+     
+    name = models.CharField(max_length=100, default='Session', help_text='Default name of the tab in fronend.')
     user = models.ForeignKey('AccountData', on_delete=models.CASCADE, related_name='saved_hosts', default=None, help_text='The user associated with the saved host.')
-    ip_address_v4 = models.GenericIPAddressField(protocol='IPv4', blank=True, null=True, help_text='The IPv4 address of the saved host.')
-    ip_address_v6 = models.GenericIPAddressField(protocol='IPv6', blank=True, null=True, help_text='The IPv6 address of the saved host.')
-    hostname = models.CharField(max_length=255, unique=True, help_text='The hostname of the saved host.')
+    ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the saved host.')
+    hostname = models.CharField(max_length=255, blank=True, null=True, help_text='The hostname of the saved host.')
     username = models.CharField(max_length=255, blank=True, null=True, help_text='The username for accessing the saved host.')
     password = EncryptedCharField(max_length=500, blank=True, null=True, help_text='The password for accessing the saved host.')
 
@@ -63,7 +71,7 @@ class SavedHost(models.Model):
     port = models.PositiveIntegerField(default=22, blank=True, null=True, help_text='The port number for accessing the saved host.')
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the saved host was created.')
     updated_at = models.DateTimeField(auto_now=True, help_text='The date and time when the saved host was last updated.')
-    color = ColorField(format="hexa")
+    color = ColorField(format="hexa", help_text="Tab color", samples=COLOR_PALETTE)
 
     def __str__(self):
         if self.hostname is None:
@@ -175,7 +183,7 @@ class SSHData(BaseData):
         self.delete()
 
     @classmethod
-    def open(cls, name, user, ip, username, password, private_key, passphrase):
+    def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, save=False, **kwargs):
         ssh_data = cls.objects.create(
             session_master=user,
             # TODO: DODAJ DO MODELU JAKIES DODATKOWE POLA JAK POTRZEBUJESZ:
@@ -183,17 +191,32 @@ class SSHData(BaseData):
         )
         ssh_data.save()
 
+        print(save)
+
+        if save:
+            SavedHost.objects.create(
+                user = user,
+                name = name,
+                ip = ip,
+                hostname = hostname,
+                username = username,
+                password = password,
+                private_key = private_key,
+                passphrase = passphrase,
+                port = port
+            )
+
         session = SessionsList.objects.create(
             name = name,
             user = user,
             content_type=ContentType.objects.get_for_model(cls),
-            object_id=ssh_data.id
+            object_id=ssh_data.pk
         )
 
         session.save()
 
         log_entry = Log.objects.create(
-            log_text=f"Session created by {user.username} for SSHData: {ssh_data.name}",
+            log_text=f"Session created by {user.get_username()} for SSHData: {ssh_data.name}",
         )
 
         log_entry.save()

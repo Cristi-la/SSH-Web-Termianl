@@ -101,6 +101,19 @@ body {
         color: #d1e7dd;
         border-color: #228b5a;
 }
+.form-check .form-check-input,
+.form-floating .form-control,
+.form-group .form-control {
+        --bs-bg-opacity: 1;
+        background-color: rgba(var(--bs-dark-rgb),var(--bs-bg-opacity)) !important;
+        color:var(--slate-300);
+        border: 1px solid var(--slate-600);
+}
+
+.form-check .form-check-label {
+        color:var(--slate-500);
+}
+
 
 /* ANIMACJE */
 .slide-out-blurred-top {
