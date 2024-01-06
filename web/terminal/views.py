@@ -1,7 +1,8 @@
 from typing import Any
+from django.http import HttpRequest
+from django.http.response import HttpResponse as HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, RedirectView
-from django.views.generic.detail import DetailView
 from terminal.models import SSHData, NotesData, SessionsList
 from django.shortcuts import render, redirect
 from terminal.forms import SSHDataForm
@@ -12,9 +13,11 @@ from terminal.models import AccountData
 from terminal.responses import (
     SESSION_CLOSED,
 )
+from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 # ----------------------
 #  SSH session handling
 # ----------------------
@@ -90,16 +93,50 @@ class SSHCreateView(TemplateCreateSession): #DONE
         return render(request, self.template_name, {'form': form})
 
 # WORK IN PROGRESS
-class NoteDetailView(DetailView):
+class NoteDetailView(TemplateCreateSession):
     template_name  = 'views/terminals/note.html'
     model = NotesData
     context_object_name = 'notedata'
 
-class TermianlView(TemplateView):
+class NoteCreateView(TemplateCreateSession):
+    model = NotesData  
+    queryset = NotesData.objects.none()
+    # form_class = SSHDataForm
+
+class TermianlView(LoginRequiredMixin, TemplateView):
     template_name  = 'views/terminal.html'
 
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return render(request, self.template_name)
+    
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        
+        sessions = SessionsList.get_sessions_for(user=self.request.user)
+
+        sessions_list = {'sessions': []}
+
+        for session in sessions:
+            content_type = session['content_type']
+            object_id = session['object_id']
+            model_class = ContentType.objects.get_for_id(content_type).model_class()
+
+            model_instance = get_object_or_404(model_class, pk=object_id)
+            session['url'] = model_instance.url
+            session['create_url'] = model_instance.create_url
+            sessions_list['sessions'].append(session)
+        
+        return JsonResponse(sessions_list, status=202)
 
 #  BASE VIEWS:
+class TerminalCreatView(LoginRequiredMixin, TemplateView):
+    template_name = 'views/create.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        request.apply_custom_headers = True
+        return super().dispatch(request, *args, **kwargs)
+
+
+
 class LoginView(TemplateView):
     template_name = 'views/login.html'
     extra_context = {'title': 'login'}

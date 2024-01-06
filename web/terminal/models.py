@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from encrypted_model_fields.fields import EncryptedCharField
 from django.core.exceptions import ValidationError
 from abc import ABCMeta, abstractmethod
+from django.urls import reverse
 
 class AccManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -88,6 +89,9 @@ class AbstractModelMeta(ABCMeta, type(models.Model)):...
 class BaseData(models.Model, metaclass=AbstractModelMeta):
     log: Log
 
+    create_url: str
+    url: str
+
     name = models.CharField(max_length=100, default='Session', help_text='Default name of the tab in fronend.')
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the data was created.')
     updated_at = models.DateTimeField(auto_now=True, help_text='The date and time when the data was last updated.')
@@ -138,6 +142,14 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
 
 class NotesData(BaseData):
     TASK_READER = False
+
+    @property
+    def create_url(self):
+        return reverse('note.create')
+    
+    @property
+    def url(self):
+        return reverse('note.detail', kwargs={'pk': self.pk})
     # logs = GenericRelation(Log, related_query_name='notesdata_logs', blank=True, help_text='Logs related to this notes data.')
 
     def __str__(self):
@@ -145,6 +157,13 @@ class NotesData(BaseData):
 
 class SSHData(BaseData):
     TASK_READER = True
+
+    @property
+    def create_url(self):
+        return reverse('ssh.create')
+    @property
+    def url(self):
+        return reverse('ssh.detail', kwargs={'pk': self.pk})
     # logs = GenericRelation(Log, related_query_name='sshdata_logs', blank=True, help_text='Logs related to this SSH data.')
 
     def __str__(self):
@@ -235,3 +254,9 @@ class SessionsList(models.Model):
 
     def close(self):
         self.delete()
+
+    @classmethod
+    def get_sessions_for(cls, user: AccountData):
+        return cls.objects.filter(user=user).values(
+            'name', 'color', 'pk', 'object_id', 'content_type'
+        )

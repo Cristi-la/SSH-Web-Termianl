@@ -1,140 +1,45 @@
-/*  --- TABULATORS ---  */
-.form-tab {
+.nav-tabs .nav-link {
     background-color: var(--slate-800);
     color: var(--slate-500);
-    position: relative;
-    cursor: pointer;
     transition: background-color .115s ease-in-out
-                color .115s ease-in-out;
-}
-.form-tab:hover {
-    background-color: var(--slate-700);
-    color: var(--slate-200)
+    color .115s ease-in-out;
+    border-radius: 50rem !important;
+    padding-right: 1rem !important;
+    padding-left: 1rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-right: .25rem !important;
+    margin-left: .25rem !important;
+    border: 1px solid var(--slate-700);
 }
 
-.form-tab:active {
+.nav-tabs .nav-link:hover {
     background-color: var(--slate-600);
     color: var(--slate-300);
-}
-.form-tab:focus,
-.form-tab.active {
-    background-color: var(--slate-500);
-    color: var(--slate-300);
+    border: 1px solid var(--slate-400);
 }
 
-/* Drag */
-.form-tab.dragover {
-    background-color: var(--slate-900);
-    color: var(--slate-600); 
-}
-.form-tab.drag {
-    background-color: var(--sky-950);
-    color: var(--slate-300);
-    opacity: .5;
-}
-
-
-
-/* Drag */
-.form-tab-close {
-    right: .0rem;
-    border: 1px solid var(--slate-700);
-    background-color: var(--slate-800);
-    top: .0rem;
-    padding: .2rem .32rem;
-    border-radius: 100%;
-    opacity: .05;
-    color: var(--slate-200);
-    position: absolute;
-    transition: opacity .115s ease-in-out, 
-                background-color .115s ease-in-out;
-    cursor: pointer;
-}
-.form-tab:hover > .form-tab-close{
-    opacity: .4;
-    background-color: var(--slate-500);
-}
-
-.form-tab > .form-tab-close:hover{
-    opacity: 1;
-}
-
-/*  --- WINDOWS ---  */
-.window {
-    position: relative;
-}
-.window > .CodeMirror {
-    border-radius: .5rem;
-    border: solid 2px var(--slate-800);
-
-}
-/* windows KEYS */
-.window > .sessionKey {
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: 1rem 1.4rem;
-    cursor: pointer;
-}
-
-.window > .sessionKey, 
-.window > .sessionKey.enable::before {
-    color: var(--slate-500);
+.nav-tabs .nav-link.active {
+    background-color: var(--slate-300);
+    color: var(--slate-800);
     font-weight: bold;
-    font-family: monospace;
-    font-size: 1.2rem;
-    transition: color .3s ease-in-out;
-}
-.window > .sessionKey::before {
-    content: '#';
-    margin-right: .15rem;
-    cursor: initial;
-}
-.window > .sessionKey.hideKey,
-.window > .sessionKey.hideKey::before {
-    color: var(--slate-600)
-}
-.window > .CodeMirror.hide ~ .sessionKey {
-    display: none;
+    border: .5px solid var(--slate-900);
 }
 
+/* ADD button */
+.nav-tabs .nav-link.add {
+    padding: 0 !important;
+    background-color: var(--sky-950);
 
-/*  --- CONTEXT MENU ---  */
-.context-menu {
-    z-index: 10;
-    min-width: 8rem;
-    max-width: 12rem;
-    overflow-x: hidden;
-    padding: 0 0;
-    margin: 0;
-    font-size: .8rem;
-    text-align: left;
-    list-style: none;
-    background-color: var(--slate-800);
-    background-clip: padding-box;
-    border: 1px solid var(--slate-700);
-    border-radius: .25rem;
-    display: block;
-    position: fixed;
+    font-weight: bold;
+    width: 18px;
+    height: 18px;
 }
-.context-menu > li {
-    color: var(--slate-500);
-    padding: .2rem 1rem;
-    cursor: pointer;
-}
-.context-menu > li.disabled {
-    color: var(--slate-600);
-    background-color: var(--slate-900);
-    cursor: initial;
-}
-.context-menu > li:not(.disabled):hover {
-    color: var(--slate-400);
-    background-color: var(--slate-700);
-    cursor: pointer;
+.nav-tabs .nav-link.add:hover {
+    background-color: var(--sky-600);
 }
 
-.context-menu > div.divider {
-    height: 0;
-    overflow: hidden;
-    border-top: 1px solid var(--slate-600);
+.tab-content .tab-pane {
+    height: 100%;
+    margin: 1em !important;
 }

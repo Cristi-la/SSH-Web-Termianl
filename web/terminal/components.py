@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from django_components import component
 
 @component.register("LoadCodeMirror")
@@ -12,3 +13,8 @@ class LoadCodeMirror(component.Component):
 @component.register("Logo")
 class Logo(component.Component):
     template_name = "logo.html"
+
+    def get_context_data(self, url=False):
+        return {
+            "url": url,
+        }

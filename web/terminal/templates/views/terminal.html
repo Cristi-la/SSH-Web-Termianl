@@ -5,34 +5,47 @@
 
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
-<!-- Content-Security-Policy meta tag -->
+{% comment %} <!-- Content-Security-Policy meta tag --> {% endcomment %}
 <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'">
-{% comment %} <link rel="stylesheet" href="{% static 'css/login.css' %}"> {% endcomment %}
+<link rel="stylesheet" href="{% static 'css/tabs.css' %}">
+<script  src="{% static 'js/communicate.js' %}"></script>
+<script  src="{% static 'js/ui.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
-TERMINAL VIEW
-<div class="border-slate-700-3 h-100 m-4">
-  <iframe class="ratio ratio-16x9"  src="{% url 'ssh.create' %}"  frameborder="0" width="100%" height="100%"  allowfullscreen></iframe>
-</div>
+
+
+<main class='h-100'>
+    <nav>
+        <div id="tablist" class="nav nav-tabs p-1 d-flex align-items-center justify-content-start" style="border-color: var(--slate-700); font-size: .7rem; " id="nav-tab" role="tablist">
+          <button id="createTerminal" class="nav-link add d-flex align-items-center justify-content-center" type="button" role="tab" >
+            <img src="{% static 'images/add.svg' %}" class="d-block" height="16px" width="16px" alt="New" />
+          </button>
+        </div>
+    </nav>
+    <div class="tab-content h-100" id="tabpanel">
+
+    </div>
+</main>
 
 <script>
-    // JavaScript code for making the iframe fullscreen
-    {% comment %} const iframe = document.getElementById('fullscreen-iframe');
-
-    iframe.addEventListener('click', () => {
-        if (iframe.requestFullscreen) {
-            iframe.requestFullscreen();
-        } else if (iframe.mozRequestFullScreen) {
-            iframe.mozRequestFullScreen();
-        } else if (iframe.webkitRequestFullscreen) {
-            iframe.webkitRequestFullscreen();
-        } else if (iframe.msRequestFullscreen) {
-            iframe.msRequestFullscreen();
+    let response = getSessions().then(result => {
+        if (result && result.sessions) {
+            addElementsForSessions(result.sessions);
+            chooseLastElementForSessions(result.sessions);
         }
-    }); {% endcomment %}
-</script>
 
+    }).catch(error => {
+        console.error('Error in retrieving sessions:', error);
+    });
+
+    document.getElementById('createTerminal').addEventListener('click', (e)=>{
+        addCreateTabPanels('{% url "create" %}')
+    })
+    
+
+
+</script>
 
 {% endblock %}

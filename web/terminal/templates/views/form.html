@@ -1,10 +1,24 @@
-{% load bootstrap5 %}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
 
-<form method="post" action="{{action}}">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <button class="btn btn-success" type="submit">Submit</button>
-</form>
-  
+{% extends "base.html" %}
+
+{% load static %}
+{% load bootstrap5 %}
+
+{% comment %} Meta tags {% endcomment %}
+{% block meta_tags %}
+<link rel="stylesheet" href="{% static 'css/subpage.css' %}">
+{% endblock %}
+
+
+{% block content %}
+
+<main style="z-index: 10" class="form-signin text-center">
+    <form method="post" class="p-4" action="{{action}}">
+        {% csrf_token %}
+        {% bootstrap_form form %}
+        <button class="btn btn-success" type="submit">Submit</button>
+    </form>
+</main>
+
+
+{% endblock %}

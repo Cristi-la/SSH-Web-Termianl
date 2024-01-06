@@ -1,0 +1,7 @@
+body {
+    background-image: linear-gradient(0deg, var(--slate-700) 0%, var(--slate-800) 0%)
+}
+
+#copyright {
+    display: none;
+}

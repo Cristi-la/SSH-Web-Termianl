@@ -102,10 +102,12 @@ function stopAnimation() {
 }
 
 // Start the animation when the page loads
-startAnimation();
+startAnimation()
 
-// Stop the animation when the user leaves the page
-window.addEventListener('beforeunload', stopAnimation);
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState == 'hidden') stopAnimation()
+    else startAnimation() 
+  });
 
 // Update screenWidth on window resize
 window.addEventListener('resize', updateScreenWidth);

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load component_tags %}
+
+{% comment %} Meta tags {% endcomment %}
+{% block meta_tags %}
+<link rel="stylesheet" href="{% static 'css/login.css' %}">
+<link rel="stylesheet" href="{% static 'css/subpage.css' %}">
+<script src="{% static 'js/words.js' %}"></script>
+<script src="{% static 'js/communicate.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+<main style="z-index: 10" class="form-signin text-center">
+    <div class="p-3 text-center">
+        {% component "Logo" url=False %}
+    </div>
+
+    <h4 class="h4 mb-3 fw-normal" style="color:var(--slate-400)">Please choose window type</h4>
+    <a href="{% url 'ssh.create' %}" class="w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">SSH session</a>
+    <a href="{% url 'note.create' %}" class="w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">Note session</a>
+
+
+    <button id="close" data-session-id="create" class="mt-4 w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">
+        Close
+    </button>
+
+</main>
+
+
+<script>
+    window.addEventListener("load", (e) => {
+        
+        document.getElementById('close').addEventListener('click', (e) => {
+            id = e.target.getAttribute('data-session-id')
+
+            if (id) emitCloseEvent(id)
+        
+        });
+
+
+    });
+</script>
+
+{% endblock %}
