@@ -1,13 +1,9 @@
-html,
-body {
-  height: 100%;
-}
-
 body {
   display: flex;
   align-items: center;
   padding-top: 40px;
   padding-bottom: 40px;
+  overflow: hidden;
 }
 
 .form-signin {
@@ -35,4 +31,25 @@ body {
   margin-bottom: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+}
+
+
+
+.word-wrapper {
+  position: absolute;
+}
+
+.word {
+  display: inline-block;
+  transform-origin: center bottom;
+}
+
+@keyframes fall {
+  from {
+    transform: translateY(-100vh);
+  }
+  to {
+      transform: translateY(100vh);
+      opacity: 0;
+  }
 }

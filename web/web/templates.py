@@ -12,6 +12,11 @@ class TemplateSession(ABC, SessionPermissionMixin, DetailView):
     template_name: str
     model: BaseData
 
+    def dispatch(self, request, *args, **kwargs):
+        request.apply_custom_headers = True
+        return super().dispatch(request, *args, **kwargs)
+
+
     @abstractmethod
     def patch(self, request, *args, **kwargs):
         '''
@@ -50,11 +55,15 @@ class TemplateSession(ABC, SessionPermissionMixin, DetailView):
         '''
 
 class TemplateCreateSession(ABC, LoginRequiredMixin, CreateView):
-    template_name: str = 'form.html'
+    template_name: str = 'views/form.html'
     http_method_names: tuple[str] = ('get','post',)
     model: BaseData  
     queryset: QuerySet
     form_class: Form
+
+    def dispatch(self, request, *args, **kwargs):
+        request.apply_custom_headers = True
+        return super().dispatch(request, *args, **kwargs)
 
     @abstractmethod
     def post(self,  request, *args, **kwargs):
@@ -65,6 +74,7 @@ class TemplateCreateSession(ABC, LoginRequiredMixin, CreateView):
         - Via method confidential parameters can be send.
         '''
 
+    @abstractmethod
     def get(self, request, *args, **kwargs):
         '''
         Method create form which can be filled with NEW session data...

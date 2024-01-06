@@ -22,8 +22,17 @@
 body {
     background-image: linear-gradient(0deg, var(--slate-800) 0%, var(--slate-900) 0%);
 } 
+html,
+body {
+  height: 100%;
+}
+
 
 /* utils */
+.border-slate-700-3 {
+        border: 3px solid var(--slate-700);
+}
+
 .border-slate-700 {
     border: 2px solid var(--slate-700);
 }

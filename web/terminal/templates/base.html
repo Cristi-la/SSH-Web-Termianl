@@ -2,42 +2,34 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal</title>
+    <meta name="description" content="Platform for simple terminal in webbrowser">
+    <meta name="author" content="Krzysztof Stefański; Mateusz Setkowicz">
+    <title>Web Terminal</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 
+    
     {% load bootstrap5 %}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
 
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/cli.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tabs.css' %}">
 
-    {% block stylesheet %}{% endblock %}
+    {% block meta_tags %}{% endblock %}
 
-    
-    {% load component_tags %}
-
-    <!-- Code Mirror -->
-    {% component "LoadCodeMirror" %}
 </head>
+<body id="page-top">
 
+    <div id="message">
+        <div class="validation p-3 fw-4 text-center">
+            {% bootstrap_messages %}
+        </div>
+    </div>
 
-<body>
     {% block content %}{% endblock %}
 </body>
-
-{% block script %}{% endblock %}
-
-<!-- Channels hander -->
-<script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
-
-<!-- Tools - only handlers -->
-<script type="text/javascript" src="{% static 'js/tools/cli.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/tools/ui.js' %}"></script>
-
-<!-- General handler -->
-<script type="text/javascript" src="{% static 'js/app.js' %}"></script>
 </html>

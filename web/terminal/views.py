@@ -20,7 +20,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 # ----------------------
 
 class SSHDetailView(TemplateSession):
-    template_name  = 'ssh.html'
+    template_name  = 'views/terminals/ssh.html'
     model = SSHData
 
     def dispatch(self, request, *args, **kwargs):
@@ -91,12 +91,12 @@ class SSHCreateView(TemplateCreateSession): #DONE
 
 # WORK IN PROGRESS
 class NoteDetailView(DetailView):
-    template_name  = 'note.html'
+    template_name  = 'views/terminals/note.html'
     model = NotesData
     context_object_name = 'notedata'
 
 class TermianlView(TemplateView):
-    template_name  = 'views/both_terminal.html'
+    template_name  = 'views/terminal.html'
 
 
 #  BASE VIEWS:

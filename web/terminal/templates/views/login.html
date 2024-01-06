@@ -1,4 +1,4 @@
-{% extends "base_login.html" %}
+{% extends "base.html" %}
 
 {% load static %}
 {% load component_tags %}
@@ -6,11 +6,12 @@
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
 <link rel="stylesheet" href="{% static 'css/login.css' %}">
+<script src="{% static 'js/words.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
-<main class="form-signin text-center">
+<main style="z-index: 10" class="form-signin text-center">
     <form action="{% url 'login' %}" method="POST">
         {% csrf_token %}
         <div class="p-3 text-center">
@@ -47,4 +48,5 @@
         {% endif %}
     </form>
 </main>
+
 {% endblock %}

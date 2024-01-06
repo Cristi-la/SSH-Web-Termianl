@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load component_tags %}
+
+{% comment %} Meta tags {% endcomment %}
+{% block meta_tags %}
+<!-- Content-Security-Policy meta tag -->
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'">
+{% comment %} <link rel="stylesheet" href="{% static 'css/login.css' %}"> {% endcomment %}
+{% endblock %}
+
+
+{% block content %}
+TERMINAL VIEW
+<div class="border-slate-700-3 h-100 m-4">
+  <iframe class="ratio ratio-16x9"  src="{% url 'ssh.create' %}"  frameborder="0" width="100%" height="100%"  allowfullscreen></iframe>
+</div>
+
+<script>
+    // JavaScript code for making the iframe fullscreen
+    {% comment %} const iframe = document.getElementById('fullscreen-iframe');
+
+    iframe.addEventListener('click', () => {
+        if (iframe.requestFullscreen) {
+            iframe.requestFullscreen();
+        } else if (iframe.mozRequestFullScreen) {
+            iframe.mozRequestFullScreen();
+        } else if (iframe.webkitRequestFullscreen) {
+            iframe.webkitRequestFullscreen();
+        } else if (iframe.msRequestFullscreen) {
+            iframe.msRequestFullscreen();
+        }
+    }); {% endcomment %}
+</script>
+
+
+{% endblock %}

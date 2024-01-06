@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'web.security.ContentSecurityPolicyMiddleware',
 ]
 
 FIELD_ENCRYPTION_KEY = b'pfc_WxE-RKvu2dF-gWHTXL8JKdK_Aie2Lr29F-XiJso='
