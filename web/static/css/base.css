@@ -7,7 +7,6 @@
     --slate-400: #94a3b8;
 	--slate-300: #cbd5e1;
     --slate-200: #e2e8f0;
-    /* --bs-body-bg: var(--slate-900); */
 
     --sky-950: #082f49;
     --sky-900: #0c4a6e;
@@ -21,11 +20,8 @@
 }
 
 body {
-    min-height: 100vh;
-    min-width: 900px;
     background-image: linear-gradient(0deg, var(--slate-800) 0%, var(--slate-900) 0%);
-}
-
+} 
 
 /* utils */
 .border-slate-700 {
@@ -35,64 +31,148 @@ body {
     border: 1px solid var(--slate-700);
 }
 
+.border-slate-600-1 {
+    border: 1px solid var(--slate-600);
+}
+
+
+.bg-slate-800 {
+    background-color: var(--slate-800);
+    color: var(--slate-500);
+    transition: background-color .115s ease-in-out
+    color .115s ease-in-out;
+}
+
+.bg-slate-800:hover {
+    background-color: var(--slate-600);
+    color: var(--slate-300);
+}
+
+
+.bg-slate-700 {
+    background-color: var(--slate-700);
+    color: var(--slate-400);
+    transition: background-color .115s ease-in-out
+    color .115s ease-in-out;
+}
+
+.bg-slate-700:hover {
+    background-color: var(--slate-500);
+    color: var(--slate-300);
+}
+
+
 .disable_selection {
   webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE 10 and IE 11 */
   user-select: none; /* Standard syntax */
 }
 
-
-
-/* General */
-header {
-    height: auto;
-}
-main {
-    min-height: 90vh;
-    max-height: 90vh;
-}
-
-#user_menu_img {
-    background-color: var(--sky-950);
+/* BASE STATIC */
+#message {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    animation: bounce-top, slide-out-blurred-top;
+    animation-duration: 0.9s, 0.45s; 
+    animation-delay: 0s, 4s;
+    animation-fill-mode: forwards;
 }
 
-/* Animations */
+.alert-danger {
+        background-color: #842029;;
+        color: #f5c2c7;
+        border-color: #ba2d39;
+}
+.alert-success {
+        background-color: #0f5132;;
+        color: #d1e7dd;
+        border-color: #228b5a;
+}
+
+/* ANIMACJE */
+.slide-out-blurred-top {
+	-webkit-animation: slide-out-blurred-top 0.45s cubic-bezier(0.755, 0.050, 0.855, 0.060) 5s both;
+	        animation: slide-out-blurred-top 0.45s cubic-bezier(0.755, 0.050, 0.855, 0.060) 5s both;
+}
 
 .blink {
 	-webkit-animation: blink-2 0.9s both;
 	        animation: blink-2 0.9s both;
-}
- @-webkit-keyframes blink-2 {
-    0% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.2;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-  @keyframes blink-2 {
-    0% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.2;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-  
-.hide {
-    display: none;
 }
 
 .jello-horizontal {
 	-webkit-animation: jello-horizontal 0.9s both;
 	        animation: jello-horizontal 0.9s both;
 }
+@-webkit-keyframes slide-out-blurred-top {
+    0% {
+            -webkit-transform: translateY(0) scaleY(1) scaleX(1);
+                    transform: translateY(0) scaleY(1) scaleX(1);
+            -webkit-transform-origin: 50% 0%;
+                    transform-origin: 50% 0%;
+            -webkit-filter: blur(0);
+                    filter: blur(0);
+            opacity: 1;
+    }
+    100% {
+            -webkit-transform: translateY(-1000px) scaleY(2) scaleX(0.2);
+                    transform: translateY(-1000px) scaleY(2) scaleX(0.2);
+            -webkit-transform-origin: 50% 0%;
+                    transform-origin: 50% 0%;
+            -webkit-filter: blur(40px);
+                    filter: blur(40px);
+            opacity: 0;
+    }
+    }
+    @keyframes slide-out-blurred-top {
+    0% {
+            -webkit-transform: translateY(0) scaleY(1) scaleX(1);
+                    transform: translateY(0) scaleY(1) scaleX(1);
+            -webkit-transform-origin: 50% 0%;
+                    transform-origin: 50% 0%;
+            -webkit-filter: blur(0);
+                    filter: blur(0);
+            opacity: 1;
+    }
+    100% {
+            -webkit-transform: translateY(-1000px) scaleY(2) scaleX(0.2);
+                    transform: translateY(-1000px) scaleY(2) scaleX(0.2);
+            -webkit-transform-origin: 50% 0%;
+                    transform-origin: 50% 0%;
+            -webkit-filter: blur(40px);
+                    filter: blur(40px);
+            opacity: 0;
+    }
+}
+         
+
+
+@-webkit-keyframes blink-2 {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.2;
+    }
+    100% {
+        opacity: 1;
+    }
+    }
+    @keyframes blink-2 {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.2;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+  
+
+
 @-webkit-keyframes jello-horizontal {
   0% {
     -webkit-transform: scale3d(1, 1, 1);

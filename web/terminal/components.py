@@ -8,3 +8,7 @@ class LoadCodeMirror(component.Component):
     # class Media:
     #     css = "calendar/calendar.css"
     #     js = "calendar/calendar.js
+
+@component.register("Logo")
+class Logo(component.Component):
+    template_name = "logo.html"

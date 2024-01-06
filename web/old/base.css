@@ -1,0 +1,26 @@
+
+body {
+    min-height: 100vh;
+    min-width: 900px;
+}
+
+
+
+
+
+/* General */
+header {
+    height: auto;
+}
+main {
+    min-height: 90vh;
+    max-height: 90vh;
+}
+
+#user_menu_img {
+    background-color: var(--sky-950);
+}
+
+/* Animations */
+
+
