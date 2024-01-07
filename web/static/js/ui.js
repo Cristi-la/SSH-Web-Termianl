@@ -34,7 +34,7 @@ function updateTabToTabList(current_id, session_id, name){
 
   const currentBtn = document.getElementById(`nav-${current_id}-tab`);
   const newBtn = document.getElementById(`nav-${current_id}-tab`);
-  if (currentBtn && !newBtn) return;
+  if (!currentBtn || newBtn) return;
 
   if (session_id) currentBtn.id = `nav-${session_id}-tab`
   if (name) currentBtn.textContent = name;
@@ -80,7 +80,7 @@ function updatePanelFromTabPanels(current_id, session_id){
 
   const currnetTabPane = document.getElementById(`session-${current_id}`);
   const newTabPane = document.getElementById(`session-${session_id}`);
-  if (currnetTabPane && !newTabPane) return;
+  if (!currnetTabPane || newTabPane) return;
 
   if (session_id) currnetTabPane.id = `nav-${session_id}-tab`
 }

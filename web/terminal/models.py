@@ -191,9 +191,7 @@ class SSHData(BaseData):
             # ...W SSHData
         )
         ssh_data.save()
-
-        print(save)
-
+        
         if save:
             SavedHost.objects.create(
                 user = user,
