@@ -1,3 +1,11 @@
+let terminalManager
+
+document.addEventListener("DOMContentLoaded", function () {
+    terminalManager = new TerminalManager();
+    terminalManager.createTerminal();
+    terminalManager.openTerminal(document.getElementById('terminal'));
+});
+
 class TerminalManager {
     constructor() {
         this.term = null

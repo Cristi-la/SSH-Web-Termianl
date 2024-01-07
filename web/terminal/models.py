@@ -8,6 +8,9 @@ from encrypted_model_fields.fields import EncryptedCharField
 from django.core.exceptions import ValidationError
 from abc import ABCMeta, abstractmethod
 from django.urls import reverse
+from terminal.ssh import SSHModule
+from django.core.cache import cache
+from asgiref.sync import sync_to_async
 
 class AccManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -154,7 +157,7 @@ class NotesData(BaseData):
     @property
     def create_url(self):
         return reverse('note.create')
-    
+
     @property
     def url(self):
         return reverse('note.detail', kwargs={'pk': self.pk})
@@ -164,11 +167,12 @@ class NotesData(BaseData):
         return f"Note: {self.name}"
 
 class SSHData(BaseData):
-    TASK_READER = True
+    CACHED_CREDENTIALS = False
 
     @property
     def create_url(self):
         return reverse('ssh.create')
+
     @property
     def url(self):
         return reverse('ssh.detail', kwargs={'pk': self.pk})
@@ -178,9 +182,46 @@ class SSHData(BaseData):
         return f"SSH Connection: {self.name}"
     
     def close(self):
-        # TODO: Close user session in consumers and SSHModule:
-
         self.delete()
+
+    async def read(self):
+        return await SSHModule.read(await self.__get_session_id())
+
+    async def send(self, data):
+        try:
+            await SSHModule.send(await self.__get_session_id(), data)
+        except Exception:
+            raise
+
+    async def connect(self, ip=None, username=None, port=None, password=None, private_key=None, passphrase=None):
+        if self.CACHED_CREDENTIALS:
+            cache_key = f'{await self.__get_session_id()}'
+            cache_credentials = cache.get(cache_key)
+
+            ip = cache_credentials.get('ip')
+            username = cache_credentials.get('username')
+            password = cache_credentials.get('password')
+            port = cache_credentials.get('port')
+            private_key = cache_credentials.get('private_key')
+            passphrase = cache_credentials.get('passphrase')
+
+        try:
+            await SSHModule.connect_or_create_instance(await self.__get_session_id(), host=ip, username=username, password=password,
+                                                   pkey=private_key, passphrase=passphrase, port=port)
+        except Exception:
+            raise
+
+    async def disconnect(self):
+        await SSHModule.disconnect(await self.__get_session_id())
+
+    @sync_to_async
+    def __get_session_id(self):
+        return self.sessions.all().first().object_id
+
+
+    async def check_cache_and_update_flag(self):
+        if cache.get(await self.__get_session_id()) is None:
+            self.CACHED_CREDENTIALS = False
 
     @classmethod
     def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, save=False, **kwargs):
@@ -220,11 +261,19 @@ class SSHData(BaseData):
 
         log_entry.save()
 
-        # SERVER --> REMOTE PC. reutrn True
-
-        # TODO: OPEN SSH session using: ip, username, password, private_key, passphrase
-
         ssh_data.logs.add(log_entry)
+
+        cache_key = f'{session.object_id}'
+        credentials = {
+            'ip': ip,
+            'username': username,
+            'password': password,
+            'port': port,
+            'private_key': private_key,
+            'passphrase': passphrase
+        }
+        cache.set(cache_key, credentials, timeout=60)
+        cls.CACHED_CREDENTIALS = True
 
         return ssh_data
 

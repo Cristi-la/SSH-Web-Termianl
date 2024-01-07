@@ -14,6 +14,9 @@
 <script type="text/javascript" src="{% static 'vendor/Xterm/xterm.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'vendor/Xterm/xterm-addon-fit.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
+<script type="text/javascript">
+    var objectPk = {{ object.pk }};
+</script>
 <script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
 {% endblock %}
 
@@ -45,7 +48,6 @@
 
 
 <script type="text/javascript">
-    var objectPk = {{ object.pk }};
 
     window.addEventListener('load', ()=>{
         updateElementForSessionEvent('create', '{{ object.pk }}', '{{ user_object.name }}');
@@ -56,7 +58,7 @@
             console.log(result)
             id = e.target.getAttribute('data-session-id')
             if (id) emitCloseEvent(id)
-            
+
         }).catch(error => {
             console.error('Error in deleting sessions:', error);
         });
