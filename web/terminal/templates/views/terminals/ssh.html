@@ -24,10 +24,12 @@
 
         <b>SSHData</b>: "{{object}}"
                 ID "{{object.pk}}"
+                Name "{{object.name}}"
     
     
         <b>SessionsList</b>: "{{user_object}}"
                 ID "{{user_object.pk}}" --> <i>this will be use to get websocket data</i>
+                Name "{{user_object.name}}"
     
     </pre>
 
@@ -44,6 +46,10 @@
 
 <script type="text/javascript">
     var objectPk = {{ object.pk }};
+
+    window.addEventListener('load', ()=>{
+        updateElementForSessionEvent('create', '{{ object.pk }}', '{{ user_object.name }}');
+    });
 
     document.getElementById('close').addEventListener('click', (e)=>{
         deleteCurrentSession().then(result => {

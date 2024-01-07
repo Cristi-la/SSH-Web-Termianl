@@ -186,6 +186,7 @@ class SSHData(BaseData):
     def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, save=False, **kwargs):
         ssh_data = cls.objects.create(
             session_master=user,
+            name=name,
             # TODO: DODAJ DO MODELU JAKIES DODATKOWE POLA JAK POTRZEBUJESZ:
             # ...W SSHData
         )

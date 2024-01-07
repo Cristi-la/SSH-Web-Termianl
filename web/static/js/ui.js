@@ -30,11 +30,14 @@ function removeTabFromTabList(session_id) {
 }
 
 function updateTabToTabList(current_id, session_id, name){
-  const buttonToUpdate = document.getElementById(`nav-${session_id}-tab`);
-  if (!buttonToRemove) return;
+  if (current_id == session_id || !current_id) return;
 
-  if (current_id != session_id) buttonToUpdate.id = `nav-${session_id}-tab`
-  if (name) button.textContent = name;
+  const currentBtn = document.getElementById(`nav-${current_id}-tab`);
+  const newBtn = document.getElementById(`nav-${current_id}-tab`);
+  if (currentBtn && !newBtn) return;
+
+  if (session_id) currentBtn.id = `nav-${session_id}-tab`
+  if (name) currentBtn.textContent = name;
 
 }
 
@@ -73,10 +76,13 @@ function removePanelFromTabPanels(session_id) {
 }
 
 function updatePanelFromTabPanels(current_id, session_id){
-  const tabPane = document.getElementById(`session-${session_id}`);
-  if (!tabPane) return;
+  if (current_id == session_id || !current_id) return;
 
-  if (current_id != session_id) tabPane.id = `nav-${session_id}-tab`
+  const currnetTabPane = document.getElementById(`session-${current_id}`);
+  const newTabPane = document.getElementById(`session-${session_id}`);
+  if (currnetTabPane && !newTabPane) return;
+
+  if (session_id) currnetTabPane.id = `nav-${session_id}-tab`
 }
 
 // GENERATE SESSION ELEMENTS
@@ -129,7 +135,7 @@ function chooseLastElementForSessions(sessions) {
 
 function updateElementForSession(current_id, session_id, name){
   updateTabToTabList(current_id, session_id, name)
-  updatePanelFromTabPanels(current_id, session_id, name)
+  updatePanelFromTabPanels(current_id, session_id)
 }
 
 function addCreateTabPanels(url){
