@@ -1,6 +1,7 @@
 import asyncio
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.core.exceptions import ObjectDoesNotExist
 from terminal.models import SessionsList, BaseData
 from channels.db import database_sync_to_async
 
@@ -33,7 +34,11 @@ class SessionCosumer(AsyncWebsocketConsumer):
             self.start_read()
 
     async def disconnect(self, code):
-        obj, data_obj = await self.__get_session()
+        # TODO: Think of a better solution
+        try:
+            obj, data_obj = await self.__get_session()
+        except ObjectDoesNotExist:
+            return
 
         if obj.content_type.model == 'sshdata':
             await data_obj.disconnect()

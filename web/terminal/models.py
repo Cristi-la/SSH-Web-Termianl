@@ -182,6 +182,7 @@ class SSHData(BaseData):
         return f"SSH Connection: {self.name}"
     
     def close(self):
+        self.disconnect()
         self.delete()
 
     async def read(self):

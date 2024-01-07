@@ -1,4 +1,4 @@
-const url = `ws://${window.location.host}/ws/session/${window.objectPk}`;
+const url = `ws://${window.location.host}/ws/session/${window.UserobjectPk}`;
 
 const serverSocket = new WebSocket(url);
 
