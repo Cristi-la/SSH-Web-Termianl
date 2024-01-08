@@ -194,21 +194,22 @@ class SSHData(BaseData):
         except Exception:
             raise
 
-    async def connect(self, ip=None, username=None, port=None, password=None, private_key=None, passphrase=None):
+    async def connect(self, hostname=None, ip=None, username=None, port=None, password=None, private_key=None, passphrase=None):
         if self.CACHED_CREDENTIALS:
             cache_key = f'{await self.__get_session_id()}'
             cache_credentials = cache.get(cache_key)
-
+            hostname = cache_credentials.get('hostname')
             ip = cache_credentials.get('ip')
             username = cache_credentials.get('username')
             password = cache_credentials.get('password')
             port = cache_credentials.get('port')
             private_key = cache_credentials.get('private_key')
             passphrase = cache_credentials.get('passphrase')
-
         try:
-            await SSHModule.connect_or_create_instance(await self.__get_session_id(), host=ip, username=username, password=password,
-                                                   pkey=private_key, passphrase=passphrase, port=port)
+            await SSHModule.connect_or_create_instance(await self.__get_session_id(),
+                                                       host=ip if hostname is None else hostname,
+                                                       username=username, password=password, pkey=private_key,
+                                                       passphrase=passphrase, port=port)
         except Exception:
             raise
 
@@ -266,12 +267,13 @@ class SSHData(BaseData):
 
         cache_key = f'{session.object_id}'
         credentials = {
-            'ip': ip,
-            'username': username,
-            'password': password,
-            'port': port,
-            'private_key': private_key,
-            'passphrase': passphrase
+            'hostname': None if hostname.strip() == '' else hostname.strip(),
+            'ip': None if ip.strip() == '' else ip.strip(),
+            'username': None if username.strip() == '' else username.strip(),
+            'password': None if password.strip() == '' else password.strip(),
+            'port': None if port.strip() == '' else port.strip(),
+            'private_key': None if private_key.strip() == '' else private_key.strip(),
+            'passphrase': None if passphrase.strip() == '' else passphrase.strip()
         }
         cache.set(cache_key, credentials, timeout=60)
         cls.CACHED_CREDENTIALS = True
