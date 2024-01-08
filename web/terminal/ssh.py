@@ -1,8 +1,10 @@
 import socket
 import paramiko
-from paramiko.ssh_exception import AuthenticationException, SSHException, BadHostKeyException, NoValidConnectionsError
+from paramiko.ssh_exception import AuthenticationException, SSHException, BadHostKeyException, \
+    NoValidConnectionsError, PasswordRequiredException
 import asyncio
-import json
+from io import StringIO
+
 
 class SSHModule:
     instances = {}
@@ -10,19 +12,23 @@ class SSHModule:
     active_connections = {}
 
     @classmethod
-    async def connect_or_create_instance(cls, group_name, host, username, password, port=None, pkey=None, passphrase=None):
+    async def connect_or_create_instance(cls, group_name, host, username, password, port=None, pkey=None,
+                                         passphrase=None):
         instance = cls()
         try:
-            ssh = await instance.__connect(host, username, password, port)
+            ssh = await instance.__connect(host, username, password, port, pkey, passphrase)
+        # TODO: For future cleanup if we do not want to manage specific exceptions
         except BadHostKeyException:
-            raise
-        except AuthenticationException:
-            raise
-        except socket.error:
             raise
         except NoValidConnectionsError:
             raise
+        except PasswordRequiredException:
+            raise
+        except AuthenticationException:
+            raise
         except SSHException:
+            raise
+        except socket.error:
             raise
         except Exception:
             raise
@@ -37,9 +43,10 @@ class SSHModule:
             cls.active_connections[group_name] = 1
         else:
             cls.active_connections[group_name] += 1
+            ssh.close()
 
     @staticmethod
-    async def __connect(host, username, password, port):
+    async def __connect(host, username, password, port, pkey, passphrase):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         loop = asyncio.get_running_loop()
@@ -47,7 +54,12 @@ class SSHModule:
         if port is None:
             port = 22
 
-        await loop.run_in_executor(None, ssh.connect, host, port, username, password)
+        if pkey is not None:
+            pkey_str = StringIO(pkey)
+            pkey = paramiko.RSAKey.from_private_key(pkey_str, password=passphrase)
+
+        await loop.run_in_executor(None, lambda: ssh.connect(hostname=host, port=port, username=username,
+                                                             password=password, pkey=pkey))
 
         return ssh
 
