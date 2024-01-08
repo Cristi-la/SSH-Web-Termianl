@@ -1,3 +1,37 @@
+function __createInputField(button, session_id) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  const buttonWidth = button.offsetWidth;
+  input.style.width = buttonWidth + 'px';
+  input.className = 'form-control input-on-dblclick nav-link active text-center';
+  input.value = button.textContent;
+  button.replaceWith(input);
+  input.focus();
+
+  input.addEventListener('change', function () {
+    __replaceInputWithButton(input, button, session_id);
+  });
+  input.addEventListener('blur', function () {
+    __replaceInputWithButton(input, button, session_id);
+  });
+
+  input.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        __replaceInputWithButton(input, button, session_id);
+      }
+  });
+}
+function __replaceInputWithButton(input, button, session_id) {
+  if (button.textContent == input.value) return;
+
+  if (input.value) {
+    button.textContent = input.value;
+    updateSession(session_id, input.value)
+  }
+
+  input.replaceWith(button);
+}
+
 function addTabToTabList(session_id, name) {
 
     if (document.getElementById(`nav-${session_id}-tab`)) return;
@@ -9,7 +43,7 @@ function addTabToTabList(session_id, name) {
     const button = document.createElement('button');
 
     // Set the button attributes
-    button.className = 'nav-link';
+    button.className = 'nav-link text-truncate';
     button.id = `nav-${session_id}-tab`;
     button.setAttribute('data-bs-toggle', 'tab');
     button.setAttribute('data-bs-target', `#session-${session_id}`);
@@ -18,6 +52,10 @@ function addTabToTabList(session_id, name) {
     button.setAttribute('aria-controls', `nav-${session_id}`);
     button.setAttribute('aria-selected', 'false');
     button.textContent = name;
+    button.addEventListener('dblclick', function () {
+      if (this.id == `nav-create-tab`) return;
+      __createInputField(button, session_id);
+    });
 
     // Append the button to the tablist
     tablist.prepend(button);
@@ -26,17 +64,21 @@ function addTabToTabList(session_id, name) {
 function removeTabFromTabList(session_id) {
     const buttonToRemove = document.getElementById(`nav-${session_id}-tab`);
 
-    if (buttonToRemove) buttonToRemove.parentNode.removeChild(buttonToRemove);
+    if (buttonToRemove) buttonToRemove.remove();
 }
 
 function updateTabToTabList(current_id, session_id, name){
   if (current_id == session_id || !current_id) return;
 
   const currentBtn = document.getElementById(`nav-${current_id}-tab`);
-  const newBtn = document.getElementById(`nav-${current_id}-tab`);
+  const newBtn = document.getElementById(`nav-${session_id}-tab`);
   if (!currentBtn || newBtn) return;
 
-  if (session_id) currentBtn.id = `nav-${session_id}-tab`
+  if (session_id) {
+    currentBtn.id = `nav-${session_id}-tab`
+    currentBtn.setAttribute('data-bs-target', `#session-${session_id}`);
+    currentBtn.setAttribute('aria-controls', `nav-${session_id}`);
+  }
   if (name) currentBtn.textContent = name;
 
 }
@@ -45,34 +87,30 @@ function updateTabToTabList(current_id, session_id, name){
 function addPanelTabToPanels(session_id, url) {
     if (document.getElementById(`session-${session_id}`))  return;
 
-    // Create the div element
     const tabPane = document.createElement('div');
-    tabPane.className = 'tab-pane fade';
+    tabPane.className = 'tab-pane fade bg-dark rounded border-slate-800 ';
     tabPane.id = `session-${session_id}`;
     tabPane.setAttribute('role', 'tabpanel');
     tabPane.setAttribute('aria-labelledby', `nav-${session_id}-tab`);
     tabPane.setAttribute('tabindex', '0');
 
-    // Create the iframe element
     const iframe = document.createElement('iframe');
-    iframe.src = url; // Make sure to replace this with the actual URL
+    iframe.src = url;
     iframe.frameborder = '0';
     iframe.width = '100%';
     iframe.height = '100%';
     iframe.allowfullscreen = true;
 
-    // Append the iframe to the tabPane
     tabPane.prepend(iframe);
 
-    // Add the tabPane to the #tabpanel element
-    const tabPanelElement = document.getElementById('tabpanel'); // Replace 'tabpanel' with your actual ID
+    const tabPanelElement = document.getElementById('tabpanel'); 
     tabPanelElement.appendChild(tabPane);
 }
 
 function removePanelFromTabPanels(session_id) {
     const tabPane = document.getElementById(`session-${session_id}`);
 
-    if (tabPane)  tabPane.remove(tabPane);
+    if (tabPane)  tabPane.remove();
 }
 
 function updatePanelFromTabPanels(current_id, session_id){
@@ -80,12 +118,19 @@ function updatePanelFromTabPanels(current_id, session_id){
 
   const currnetTabPane = document.getElementById(`session-${current_id}`);
   const newTabPane = document.getElementById(`session-${session_id}`);
+
+  console.log('currnetTabPane', currnetTabPane)
+  console.log('newTabPane', newTabPane)
   if (!currnetTabPane || newTabPane) return;
 
-  if (session_id) currnetTabPane.id = `nav-${session_id}-tab`
+  if (session_id) {
+    currnetTabPane.id = `session-${session_id}`
+    currnetTabPane.setAttribute('aria-labelledby', `nav-${session_id}-tab`);
+  }
+
+  onsole.log('new id', currnetTabPane.id)
 }
 
-// GENERATE SESSION ELEMENTS
 function addElementsForSession(session) {
     if (!session) return;
 
@@ -95,7 +140,10 @@ function addElementsForSession(session) {
 }
 
 function addElementsForSessions(sessions) {
-    if (!sessions.length) return;
+    if (!sessions.length) {
+      addCreateTabPanels();
+      return;
+    }
 
     sessions.forEach(session => {
         addElementsForSession(session)
@@ -120,9 +168,10 @@ function removeElementsForSessions(sessions) {
 function chooseElementForSession(sessions_id) {
     const buttonToShow = document.getElementById(`nav-${sessions_id}-tab`);
 
-    if (buttonToShow) bootstrap.Tab.getOrCreateInstance(buttonToShow).show();
-
-    console.log("Selected", sessions_id)
+    if (buttonToShow) {
+      bootstrap.Tab.getOrCreateInstance(buttonToShow).show();
+      console.log("Selected", sessions_id)
+    }
 }
 
 function chooseLastElementForSessions(sessions) {
@@ -138,11 +187,11 @@ function updateElementForSession(current_id, session_id, name){
   updatePanelFromTabPanels(current_id, session_id)
 }
 
-function addCreateTabPanels(url){
+function addCreateTabPanels(){
     removeElementsForSessions([{pk:'create'}])
 
     addTabToTabList('create', '*New');
-    addPanelTabToPanels('create', url);
+    addPanelTabToPanels('create', '/create');
     chooseElementForSession('create');
 }
 
@@ -150,14 +199,12 @@ function addCreateTabPanels(url){
 window.addEventListener('message', function(event) {
     console.log(event.data)
 
-    // Check the origin of the sender (replace "http://child-iframe.com" with the actual origin of your iframe)
     if (event.origin !== this.window.location.origin) {
 
       console.warn('Ignoring message from unexpected origin:', event.origin);
       return;
     }
-  
-    // Check if the message contains the 'run' property
+
     if (event.data && event.data.run && Array.isArray(event.data.run)) {
       event.data.run.forEach(function(runConfig) {
         if (runConfig.function && typeof runConfig.function === 'string') {

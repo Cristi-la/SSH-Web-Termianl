@@ -13,7 +13,7 @@
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 
     
-    {% load bootstrap5 %}
+    {% load django_bootstrap5 %}
     {% bootstrap_css %}
     {% bootstrap_javascript %}
 
@@ -31,8 +31,8 @@
     </div>
 
     {% block content %}{% endblock %}
-    <div id="copyright" class="position-fixed bottom-0 end-0 p-2 opacity-25">
-        Web Terminal - 2024 © Setkowicz, Stefanski
+    <div id="copyright" style="font-size: 70%" class=" text-center disable_selection position-fixed bottom-0 end-0 mx-4 mb-3 opacity-25">
+        <b>Web Terminal</b><br />2024 © Setkowicz, Stefanski
     </div>
 </body>
 </html>

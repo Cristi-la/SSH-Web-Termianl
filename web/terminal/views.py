@@ -3,7 +3,7 @@ from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, RedirectView
-from terminal.models import SSHData, NotesData, SessionsList
+from terminal.models import SSHData, NotesData, SessionsList, SavedHost
 from django.shortcuts import render, redirect
 from terminal.forms import SSHDataForm
 from django.urls import reverse, reverse_lazy
@@ -11,13 +11,17 @@ from web.templates import TemplateSession, TemplateCreateSession
 from django.shortcuts import get_object_or_404
 from terminal.models import AccountData
 from terminal.responses import (
-    SESSION_CLOSED,
+    SESSION_CLOSED, SESSION_UPDATED, 
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
+import json
+
+def decoded_data(body):
+    return json.loads(body.decode('utf-8'))
 # ----------------------
 #  SSH session handling
 # ----------------------
@@ -33,13 +37,13 @@ class SSHDetailView(TemplateSession):
         return get_object_or_404(SSHData, pk=self.kwargs['pk']) 
 
     def post(self, request, *args, **kwargs): # DONE
+        obj = self.get_object()
         # Currently to join session: self.object need to have flag "session_open" set to True
-        session = SessionsList.join(
+        SessionsList.join(
             user=self.request.user,
-            data_obj = self.get_object(),
+            data_obj = obj,
             name = self.request.POST.get('name'),
         )
-
         return self.get(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs): # DONE
@@ -54,19 +58,35 @@ class SSHDetailView(TemplateSession):
     def delete(self, request, *args, **kwargs): #DONE
         obj = self.get_object()
 
-        self.get_object().sessions.get(user=self.request.user).close()
+        obj.sessions.get(user=self.request.user).close()
 
         return SESSION_CLOSED
     
     def patch(self, request, *args, **kwargs):
-        # TODO: WORK IN PROGRESS FOR K.S.
-        ...
+        session_master_fields = ('session_master', 'session_lock', 'session_open', 'name')
+        session_user_fields = ('name', 'color')
+        obj = self.get_object()
+
+        data = decoded_data(self.request.body)
+
+        if obj.session_master == self.request.user:
+            session_master_dict = {field: data.get(field) for field in session_master_fields if field in data and data.get(field)}
+            if session_master_dict:
+                obj.update_obj(session_master_dict)
+
+        
+        session_user_dict = {field: data.get(field) for field in session_user_fields if field in data and data.get(field)}
+        if session_user_dict:
+            obj.sessions.get(user=self.request.user).update_obj(session_user_dict)
+
+
+        return SESSION_UPDATED
 
 class SSHCreateView(TemplateCreateSession): #DONE
     model = SSHData  
     queryset = SSHData.objects.none()
     form_class = SSHDataForm
-    
+
     def get(self, request, *args, **kwargs):
         form = self.get_form()
 
@@ -75,7 +95,8 @@ class SSHCreateView(TemplateCreateSession): #DONE
             self.template_name, 
             {
                 'form': form,
-                'action': reverse('ssh.create')
+                'action': reverse('ssh.create'),
+                'prompt': 'Create SSH session',
             }
         )
     
@@ -103,17 +124,27 @@ class NoteDetailView(TemplateCreateSession):
 class NoteCreateView(TemplateCreateSession):
     model = NotesData  
     queryset = NotesData.objects.none()
+    extra_context = {
+        'prompt': 'Open notebook'
+    }
     # form_class = SSHDataForm
 
 class TermianlView(LoginRequiredMixin, TemplateView):
     template_name  = 'views/terminal.html'
+    samples = {
+        'samples': json.dumps(SavedHost.COLOR_PALETTE)
+    }
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return render(request, self.template_name)
     
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        
-        sessions = SessionsList.get_sessions_for(user=self.request.user)
+        data = decoded_data(self.request.body)
+        sid = data.get('sid', False)
+        sessions = SessionsList.get_sessions_for(user=self.request.user) 
+
+        if sid:
+            sessions.filter(pk=sid)
 
         sessions_list = {'sessions': []}
 
@@ -127,7 +158,7 @@ class TermianlView(LoginRequiredMixin, TemplateView):
             session['create_url'] = model_instance.create_url
             sessions_list['sessions'].append(session)
         
-        return JsonResponse(sessions_list, status=202)
+        return JsonResponse(sessions_list, status=200)
 
 #  BASE VIEWS:
 class TerminalCreatView(LoginRequiredMixin, TemplateView):

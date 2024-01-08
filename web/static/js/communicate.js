@@ -1,15 +1,15 @@
+var session_list = []
+
 function getCookie(name) {
     const cookieValue = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return cookieValue ? cookieValue.pop() : '';
 }
 
-function fetchData(method, url, data = {}) {
-    // Get the CSRF token from the cookies
+async function fetchData(method, url, data = {}) {
     const csrftoken = getCookie('csrftoken');
-
     data.csrfmiddlewaretoken = csrftoken
 
-    // Make the POST request
+    console.log('data', data)
     return fetch(url, {
         method: method,
         headers: {
@@ -35,7 +35,12 @@ const getSessions = async () => {
     const data = {};
 
     try {
-        return await fetchData(method, url, data);
+        const result = await fetchData(method, url, data);
+        if (!result.sessions) return []
+
+        session_list = result.sessions
+
+        return session_list
     } catch (error) {
         console.error('Error in getSessions:', error);
         return {};
@@ -43,18 +48,24 @@ const getSessions = async () => {
 }
 
 const getSession = async (session_id) => {
+    let session = session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
+
+    if (session) return session;
+
+    const method = 'POST';
+    const url = window.location.href;
+    var data = {sid: session_id};
     try {
-      const result = await getSessions();
-      const sessions = result.sessions
-      
-      const session = sessions.find((session) => session.pk == parseInt(session_id));
-      return session;
-      
+        const result = await fetchData(method, url, data);
+        const sessions = result.sessions
+        return sessions.find((session) => parseInt(session.pk) === parseInt(session_id));
     } catch (error) {
-      console.error('Error in getSession:', error);
-      return null;
+        console.error('Error in getSession:', error);
+        
     }
-  };
+    return null;
+};
+
 
 const deleteCurrentSession = async () => {
     const method = 'DELETE';
@@ -67,6 +78,27 @@ const deleteCurrentSession = async () => {
         console.error('Error in deleteCurrentSession:', error);
         return null;
     }
+}
+
+const updateSession = async (session_id, name) => {
+    const session = await getSession(session_id)
+    const url = session.url;
+    const method = 'PATCH';
+    const data = {'name': name};
+
+    try {
+        return await fetchData(method, url, data);
+    } catch (error) {
+        console.error('Error in updateSession:', error);
+        return null;
+    }
+}
+
+/// bootstrap
+function closeAllDropDowns(){
+    const dropdownElementList = document.querySelectorAll('.dropdown-toggle')
+    const dropdownList = [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl))
+    dropdownList.forEach(element => element.hide())
 }
 
 // Events
@@ -82,11 +114,12 @@ function emitSingleEvent(fun_name, args){
         })
 }
 function emitCloseEvent(session_id){
+    console.log('session close event')
     emitSingleEvent('removeElementsForSession', [session_id])
 }
 
-// TODO IMPLEMENT IN FORMS....
-function updateElementForSessionEvent(current_id, session_id, name){
+function emitElementForSessionEvent(current_id, session_id, name){
+    console.log('session update event')
     emitSingleEvent('updateElementForSession', [current_id, session_id, name])
 }
 

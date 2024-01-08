@@ -65,6 +65,7 @@ function createWord() {
     word.style.color = randomColor;
     word.style.fontWeight = randomFontWeight;
     word.style.opacity = randomOpacity;
+    word.classList = 'disable_selection'
     word.style.fontSize = `${randomSize}px`;
     wordWrapper.style.animation = `fall ${randomRotationSpeed}s linear infinite`;
 
@@ -94,7 +95,7 @@ function startAnimation() {
     wordInterval = setInterval(() => {
         createWord();
         removeWordsAtBottom();
-    }, 100); // Add a new word every second
+    }, 500); // Add a new word every second
 }
 
 function stopAnimation() {

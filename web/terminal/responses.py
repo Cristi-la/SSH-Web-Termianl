@@ -29,12 +29,24 @@ SESSION_CLOSED = BaseApiCallReponse(
 SESSION_CREATED = BaseApiCallReponse(
     success=True,
     message='Session created successfully.',
-    status = 201 
+    status = 200 
+).to_json_response()
+
+SESSION_UPDATED = BaseApiCallReponse(
+    success=True,
+    message='Session updated successfully.',
+    status = 200 
 ).to_json_response()
 
 INVALID_REQUEST = BaseApiCallReponse(
     success=False,
     message='Bad request. Ivalid url',
     status = 400 # HTTP status code for Bad Request
+).to_json_response()
+
+SESSION_IS_NOT_SHARED = BaseApiCallReponse(
+    success=False,
+    message='Bad request. Session is not shared',
+    status = 403 # HTTP status code for Bad Request
 ).to_json_response()
 

@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     # 'django.contrib.staticfiles',
 
-    'bootstrap5',
+    'django_bootstrap5',
+    "django_bootstrap_input_group",
     "django_components",
     "django_components.safer_staticfiles",
     'colorfield',

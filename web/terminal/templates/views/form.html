@@ -2,7 +2,8 @@
 {% extends "base.html" %}
 
 {% load static %}
-{% load bootstrap5 %}
+{% load django_bootstrap5 %}
+{% load django_bootstrap_input_group %}
 
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
@@ -12,21 +13,19 @@
 
 {% block content %}
 
-<main style="z-index: 10" class="">
-    <div class="container-sm">
-        <form method="post" class="p-4" action="{{action}}">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="form-group">
-                {% bootstrap_label field.label %}
-                {% bootstrap_field field show_label=False  %}
-                </div>
-            {% endfor %}
+<main class="vh-100">
+    <div class="container-sm overflow-auto py-3 col-xxl-6 col-xl-8">
+            <h1 class="fs-1 mt-2 fw-bold text-center">
+                {% if prompt %}{{prompt}}{% else %}Create Session{% endif %}
+            </h1>
+            <form method="post" class="p-4" class="overflow-auto" action="{{action}}">
+                {% csrf_token %}
+                {% bootstrap_grouped_form form %}
 
-            <div class="d-flex justify-content-center">
-                {{ form.form_buttons }}
-            </div>
-        </form>
+                <div class="d-flex justify-content-center">
+                    {{ form.form_buttons }}
+                </div>
+            </form>
     </div>
 </main>
 

@@ -148,6 +148,11 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
         '''
         '''
 
+    def update_obj(self, data_dict):
+        for key, value in data_dict.items():
+            setattr(self, key, value)
+        self.save()
+
        
 
 
@@ -225,9 +230,10 @@ class SSHData(BaseData):
             self.CACHED_CREDENTIALS = False
 
     @classmethod
-    def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, save=False, **kwargs):
+    def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, session_open, save=False, **kwargs):
         ssh_data = cls.objects.create(
             session_master=user,
+            session_open = session_open,
             name=name,
             # TODO: DODAJ DO MODELU JAKIES DODATKOWE POLA JAK POTRZEBUJESZ:
             # ...W SSHData
@@ -283,7 +289,7 @@ class SessionsList(models.Model):
     user = models.ForeignKey(AccountData, on_delete=models.CASCADE, related_name='sessions', help_text='The user associated with the session.')
     sharing_enabled = models.BooleanField(default=False, help_text='Flag indicating if sharing is enabled for the session.')
     is_active = models.BooleanField(default=True, help_text='Flag indicating if the session is active.')
-    color = ColorField(format="hexa", help_text="Tab color")
+    color = ColorField(format="hexa", help_text="Tab color", samples=SavedHost.COLOR_PALETTE)
 
     # GenericForeignKey to reference either SSHData or NotesData
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, limit_choices_to={'model__in': ['sshdata', 'notesdata']})
@@ -332,3 +338,8 @@ class SessionsList(models.Model):
         return cls.objects.filter(user=user).values(
             'name', 'color', 'pk', 'object_id', 'content_type'
         )
+    
+    def update_obj(self, data_dict):
+        for key, value in data_dict.items():
+            setattr(self, key, value)
+        self.save()

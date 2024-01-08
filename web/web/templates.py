@@ -7,6 +7,7 @@ from terminal.models import BaseData
 from django.forms import Form
 from django.db.models.query import QuerySet
 
+
 class TemplateSession(ABC, SessionPermissionMixin, DetailView):
     http_method_names: tuple[str] = ('patch','post', 'get', 'delete')
     template_name: str
@@ -24,6 +25,7 @@ class TemplateSession(ABC, SessionPermissionMixin, DetailView):
         - Example Sharing, Saving
         - always return json response.
         '''
+        return super().patch(request, *args, **kwargs)
 
     @abstractmethod
     def post(self, request, *args, **kwargs):
@@ -33,6 +35,7 @@ class TemplateSession(ABC, SessionPermissionMixin, DetailView):
         - After unsuccessful retrieval method return json response.
         - Via method every parameters can be send.
         '''
+        return super().post(request, *args, **kwargs)
 
     @abstractmethod
     def get(self,  request, *args, **kwargs):
@@ -40,6 +43,8 @@ class TemplateSession(ABC, SessionPermissionMixin, DetailView):
         Method returns view (html,css,js) of already created session (if user have sufficient permissions to object).
         - Method can pass to view basic parametrs to simplify implementation.
         '''
+
+        return super().get(request, *args, **kwargs)
 
     @abstractmethod
     def delete(self,  request, *args, **kwargs):
@@ -53,6 +58,8 @@ class TemplateSession(ABC, SessionPermissionMixin, DetailView):
         - Only information which type of session can be passed
         - Only session master can remove system session
         '''
+        
+        return super().delete(request, *args, **kwargs)
 
 class TemplateCreateSession(ABC, LoginRequiredMixin, CreateView):
     template_name: str = 'views/form.html'
@@ -73,6 +80,8 @@ class TemplateCreateSession(ABC, LoginRequiredMixin, CreateView):
         - After unsuccessful retrieval method return json response.
         - Via method confidential parameters can be send.
         '''
+        
+        return super().post(request, *args, **kwargs)
 
     @abstractmethod
     def get(self, request, *args, **kwargs):
@@ -80,3 +89,5 @@ class TemplateCreateSession(ABC, LoginRequiredMixin, CreateView):
         Method create form which can be filled with NEW session data...
         - After successful form send request forwards to POST method.
         '''
+        
+        return super().post(request, *args, **kwargs)

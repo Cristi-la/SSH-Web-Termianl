@@ -19,8 +19,15 @@
     --bs-body-color: var(--slate-200);
 }
 
+*,
+*:after,
+*:before {
+  box-sizing: border-box;
+}
+
 body {
     background-image: linear-gradient(0deg, var(--slate-800) 0%, var(--slate-900) 0%);
+    overflow: hidden;
 } 
 html,
 body {
@@ -30,6 +37,9 @@ body {
 
 
 /* utils */
+.border-slate-800 {
+        border: 1px solid var(--slate-800);
+}
 .border-slate-700-3 {
         border: 3px solid var(--slate-700);
 }
@@ -101,16 +111,20 @@ body {
         color: #d1e7dd;
         border-color: #228b5a;
 }
-.form-check .form-check-input,
-.form-floating .form-control,
-.form-group .form-control {
+form .form-control,
+form .form-check-input {
         --bs-bg-opacity: 1;
         background-color: rgba(var(--bs-dark-rgb),var(--bs-bg-opacity)) !important;
-        color:var(--slate-300);
+        color:var(--slate-400);
         border: 1px solid var(--slate-600);
 }
 
-.form-check .form-check-label {
+form .form-control:is(:active, :hover, :focus),
+form .form-check-input:is(:active, :hover, :focus) {
+        color:var(--slate-300);
+}
+
+form .form-check .form-check-label {
         color:var(--slate-500);
 }
 

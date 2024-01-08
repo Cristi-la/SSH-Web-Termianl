@@ -8,7 +8,6 @@
 {% block meta_tags %}
 <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
 <script src="{% static 'js/communicate.js' %}"></script>
-
 <link rel="stylesheet" href="{% static 'vendor/Xterm/xterm.min.css' %}">
 <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
 <script type="text/javascript" src="{% static 'vendor/Xterm/xterm.min.js' %}"></script>
@@ -22,8 +21,10 @@
 
 
 {% block content %}
-<main style="z-index: 10" class="form-signin text-center">
-    <pre>
+<main id="main" class="position-relative">
+<div class="position-absolute end-0 start-0">sss</div>
+
+    {% comment %} <pre>
 
         <b>SSHData</b>: "{{object}}"
                 ID "{{object.pk}}"
@@ -38,7 +39,7 @@
 
 </main>
 
-<button id="close" data-session-id="{{user_object.pk}}">Close connn</button>
+<button id="close" data-session-id="{{user_object.pk}}">Close connn</button> {% endcomment %}
 
 <main>
     <div id="container">
@@ -50,19 +51,20 @@
 <script type="text/javascript">
 
     window.addEventListener('load', ()=>{
-        updateElementForSessionEvent('create', '{{ object.pk }}', '{{ user_object.name }}');
+        emitElementForSessionEvent('create', '{{ object.pk }}', '{{ user_object.name }}');
+
+
+        //.getElementById('close').addEventListener('click', (e)=>{
+        //     deleteCurrentSession().then(result => {
+        //        console.log(result)
+        //        id = e.target.getAttribute('data-session-id')
+        //        if (id) emitCloseEvent(id)
+        //
+        //    }).catch(error => {
+        //        console.error('Error in deleting sessions:', error);
+        //    });
+        //})
     });
-
-    document.getElementById('close').addEventListener('click', (e)=>{
-        deleteCurrentSession().then(result => {
-            console.log(result)
-            id = e.target.getAttribute('data-session-id')
-            if (id) emitCloseEvent(id)
-
-        }).catch(error => {
-            console.error('Error in deleting sessions:', error);
-        });
-    })
 </script>
 
 

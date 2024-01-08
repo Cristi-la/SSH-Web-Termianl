@@ -7,45 +7,140 @@
 {% block meta_tags %}
 {% comment %} <!-- Content-Security-Policy meta tag --> {% endcomment %}
 <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'">
-<link rel="stylesheet" href="{% static 'css/tabs.css' %}">
-<script  src="{% static 'js/communicate.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/base_terminal.css' %}">
 <script  src="{% static 'js/ui.js' %}"></script>
+<script  src="{% static 'js/communicate.js' %}"></script>
 {% endblock %}
-
-
 {% block content %}
 
-
-<main class='h-100'>
-    <nav>
-        <div id="tablist" class="nav nav-tabs p-1 d-flex align-items-center justify-content-start" style="border-color: var(--slate-700); font-size: .7rem; " id="nav-tab" role="tablist">
+<main class='h-100 d-flex flex-column align-items-stretch'>
+    {% comment %} d-flex flex-nowrap justify-content-start {% endcomment %}
+    <div class="mb-2 d-flex flex-nowrap justify-content-start">
+        <div id="tablist" class="order-0 flex-fill nav nav-tabs p-1 d-flex align-items-center justify-content-start" id="nav-tab" role="tablist">
           <button id="createTerminal" class="nav-link add d-flex align-items-center justify-content-center" type="button" role="tab" >
             <img src="{% static 'images/add.svg' %}" class="d-block" height="16px" width="16px" alt="New" />
           </button>
         </div>
-    </nav>
-    <div class="tab-content h-100" id="tabpanel">
+        <div id="profile" class="order-1 dropdown text-end">
+            <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" id="user_profile" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{user.username}}" alt="mdo" width="36" height="36" class="rounded-circle border-slate-700">
+            </a>
+            <ul class="dropdown-menu text-small dropdown-menu-dark" aria-labelledby="user_profile">
+                <li>
+                    <a class="dropdown-item" href="#" style="color: var(--slate-400)">
+                        <img class="align-top px-1" src="{% static 'images/saved.svg' %}" />
+                        My sessions
+                    </a>
+                </li>
+                {% if user.is_staff or user.is_superuser %}
+                <li>
+                    <a class="dropdown-item" href="/admin" style="color: var(--slate-400)">
+                        <img class="align-top px-1" src="{% static 'images/admin.svg' %}" />
+                        Admin Panel
+                    </a>
+                </li>
+                {% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'logout' %}" style="color: var(--slate-400)">
+                        <img class="align-top px-1" src="{% static 'images/logout.svg' %}" />
+                        Sign out
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="tab-content flex-fill" id="tabpanel">
 
     </div>
 </main>
 
 <script>
-    let response = getSessions().then(result => {
-        if (result && result.sessions) {
-            addElementsForSessions(result.sessions);
-            chooseLastElementForSessions(result.sessions);
-        }
+    window.addEventListener('load', function(event) {
+        getSessions().then(sessions => {
+            if (sessions) {
+                addElementsForSessions(sessions);
+                chooseLastElementForSessions(sessions);
+            }
 
-    }).catch(error => {
-        console.error('Error in retrieving sessions:', error);
+        }).catch(error => {
+            console.error('Error in retrieving sessions:', error);
+        });
+
+        document.getElementById('createTerminal').addEventListener('click', (e)=>{
+            addCreateTabPanels()
+        })
     });
-
-    document.getElementById('createTerminal').addEventListener('click', (e)=>{
-        addCreateTabPanels('{% url "create" %}')
-    })
     
 
 
+    window.onclick = hideMenu;
+    window.oncontextmenu = rightClick;
+
+function hideMenu() {
+  document.getElementById("contextMenu").style.display = "none";
+}
+
+function rightClick(e) {
+    closeAllDropDowns()
+    
+
+    e.preventDefault();
+    var contextMenuWidth = 250;
+    var contextSubMenuWidth = 250;
+    var menu = document.getElementById("contextMenu")
+    menu.style.display = 'block';
+    var leftPos = ''
+    if (e.pageX < window.innerWidth - contextMenuWidth) {
+        leftPos = `${e.pageX}px`;
+    } else {
+        leftPos = `${e.pageX - contextMenuWidth}px`;
+    }
+    if (e.pageX < window.innerWidth - contextMenuWidth - contextSubMenuWidth) {
+        menu.classList.remove("sub-left");
+    } else {
+        menu.classList.add("sub-left");
+    }
+    menu.style.left = leftPos;
+    menu.style.top = e.pageY + "px";
+
+    document.querySelectorAll('iframe').forEach((iframe)=>{
+        iframe.contentDocument.addEventListener('click', function () {
+            hideMenu();
+        });
+    });
+}
+
 </script>
+
+[
+
+    ]
+<div class="context-menu">
+    <div class="container" id="contextMenu" style="display:none">
+      <div class="menu">
+        <ul class="menu-list">
+          <li class="menu-item"><button class="menu-button">Share</button></li>
+          <li class="menu-item"><button class="menu-button">Rename</button></li>
+        </ul>
+        <ul class="menu-list">
+          <li class="menu-item"><button class="menu-button ">Change color</button>
+            <ul class="menu-sub-list">
+              <li class="menu-item"><button class="menu-button">Needs review</button></li>
+              <li class="menu-item"><button class="menu-button">In progress</button></li>
+              <li class="menu-item"><button class="menu-button">Approved</button></li>
+              <li class="menu-item"><button class="menu-button">No status</button></li>
+            </ul>
+          </li>
+          <li class="menu-item"><button class="menu-button">Download</button>
+          </li>
+        </ul>
+        <ul class="menu-list">
+          <li class="menu-item"><button class="menu-button">Close</button></li>
+          <li class="menu-item"><button class="menu-button">Close All</button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
 {% endblock %}

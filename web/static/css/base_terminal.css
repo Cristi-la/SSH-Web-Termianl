@@ -1,0 +1,197 @@
+.nav-tabs .nav-link {
+    background-color: var(--slate-800);
+    color: var(--slate-500);
+    transition: background-color .115s ease-in-out
+    color .115s ease-in-out;
+    border-radius: 50rem !important;
+    padding-right: 1rem !important;
+    padding-left: 1rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-right: .25rem !important;
+    margin-left: .25rem !important;
+    border: 1px solid var(--slate-700);
+    font-size: .8rem;
+    min-width: 62px;
+    max-width: 120px;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: var(--slate-600);
+    color: var(--slate-300);
+    border: 1px solid var(--slate-400);
+}
+.nav-tabs .nav-link#nav-create-tab {
+  background-color: var(--sky-900);
+  color: var(--slate-400);
+}
+.nav-tabs .nav-link#nav-create-tab.active{
+  background-color: var(--sky-800);
+  border: 1px solid var(--slate-400);
+  color: var(--slate-300);
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--slate-300);
+    color: var(--slate-800);
+    font-weight: bold;
+    border: .5px solid var(--slate-900);
+}
+
+/* ADD button */
+.nav-tabs .nav-link.add {
+    padding: 0 !important;
+    background-color: var(--sky-950);
+
+    font-weight: bold;
+    width: 21px;
+    height: 21px;
+    min-width: auto;
+    max-width: auto;
+}
+
+
+.nav-tabs .nav-link.add:hover {
+    background-color: var(--sky-600);
+}
+
+.tab-content .tab-pane {
+    height: 100%;
+    margin: 1em !important;
+}
+
+/* Table content panels */
+
+.tab-content .tab-pane {
+  margin-top: 0em !important;
+  margin-bottom: 0em !important;
+  margin-left: 1em !important;
+  margin-right: 1em !important;
+}
+
+
+/* Context menu */
+
+  
+  .menu {
+    background-color: red;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px #40404015;
+  }
+  
+  .menu-list {
+    margin: 0;
+    display: block;
+    width: 100%;
+    padding: 8px;
+  }
+  
+  .menu-list+.menu-list {
+    border-top: 1px solid #ddd;
+  }
+  
+  .menu-sub-list:hover {
+    display: flex;
+  }
+  
+  .menu-sub-list {
+    display: none;
+    padding: 8px;
+    background-color: red;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(#404040, 0.15);
+    position: absolute;
+    left: 100%;
+    right: 0;
+    z-index: 100;
+    width: 100%;
+    top: 0;
+    flex-direction: column;
+  }
+  
+  .sub-left .menu-sub-list { 
+    left: -100%;
+    right: 0;
+  }
+  
+  .menu-item {
+    position: relative;
+  }
+  
+  .menu-button:hover {
+    background-color:blue;
+  }
+  
+  .menu-button:hover+.menu-sub-list {
+    display: flex;
+  }
+  
+  .menu-button:hover svg {
+    stroke: darkblue;
+  }
+  
+  .menu-button {
+    font: inherit;
+    border: 0;
+    padding: 8px 8px;
+    padding-right: 36px;
+    width: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    background-color: green;
+  }
+  
+  .menu-button--delete:hover {
+    color: var(--color-red);
+  }
+  
+  svg:first-of-type {
+    stroke: var(--color-red);
+  }
+  
+  .menu-button--orange svg:first-of-type {
+    stroke: var(--color-orange);
+  }
+  
+  .menu-button--green svg:first-of-type {
+    stroke: var(--color-green);
+  }
+  
+  .menu-button--purple svg:first-of-type {
+    stroke: var(--color-purple);
+  }
+  
+  .menu-button--blacksvg:first-of-type {
+    stroke: var(--color-black);
+  }
+  
+  .menu-button--checked svg:nth-of-type(2) {
+    stroke: var(--color-purple);
+  }
+  
+  .menu-button svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    stroke: var(--color-text-primary-offset);
+  }
+  
+  .menu-button:nth-of-type(2) {
+    margin-right: 0;
+    position: absolute;
+    right: 8px;
+  }
+  
+  .container {
+    position: absolute;
+    width: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  ul {
+    list-style: none;
+  }
