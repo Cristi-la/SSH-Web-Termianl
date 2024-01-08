@@ -62,6 +62,7 @@ class SavedHost(models.Model):
     user = models.ForeignKey('AccountData', on_delete=models.CASCADE, related_name='saved_hosts', default=None, help_text='The user associated with the saved host.')
     ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the saved host.')
     hostname = models.CharField(max_length=255, blank=True, null=True, help_text='The hostname of the saved host.')
+    port = models.PositiveIntegerField(default=22, blank=True, null=True, help_text='The port number for accessing the saved host.')
     username = models.CharField(max_length=255, blank=True, null=True, help_text='The username for accessing the saved host.')
     password = EncryptedCharField(max_length=500, blank=True, null=True, help_text='The password for accessing the saved host.')
 
@@ -71,7 +72,6 @@ class SavedHost(models.Model):
     passphrase = EncryptedCharField(max_length=500, blank=True, null=True, help_text='The passphrase for the private key (if applicable).')
 
     # Additional fields
-    port = models.PositiveIntegerField(default=22, blank=True, null=True, help_text='The port number for accessing the saved host.')
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the saved host was created.')
     updated_at = models.DateTimeField(auto_now=True, help_text='The date and time when the saved host was last updated.')
     color = ColorField(format="hexa", help_text="Tab color", samples=COLOR_PALETTE)
@@ -174,6 +174,10 @@ class NotesData(BaseData):
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
 
+    ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the host.')
+    hostname = models.CharField(max_length=255, blank=True, null=True, help_text='The hostname of the host.')
+    port = models.PositiveIntegerField(default=22, blank=True, null=True, help_text='The port number for accessing the host.')
+
     @property
     def create_url(self):
         return reverse('ssh.create')
@@ -238,6 +242,9 @@ class SSHData(BaseData):
             name=name,
             # TODO: DODAJ DO MODELU JAKIES DODATKOWE POLA JAK POTRZEBUJESZ:
             # ...W SSHData
+            ip=ip,
+            hostname=hostname,
+            port=port,
         )
         ssh_data.save()
         
