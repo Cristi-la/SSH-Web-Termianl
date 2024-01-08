@@ -17,6 +17,7 @@ class SSHModule:
         instance = cls()
         try:
             ssh = await instance.__connect(host, username, password, port, pkey, passphrase)
+        # TODO: For future cleanup if we do not want to manage specific exceptions
         except BadHostKeyException:
             raise
         except NoValidConnectionsError:
@@ -42,6 +43,7 @@ class SSHModule:
             cls.active_connections[group_name] = 1
         else:
             cls.active_connections[group_name] += 1
+            ssh.close()
 
     @staticmethod
     async def __connect(host, username, password, port, pkey, passphrase):
