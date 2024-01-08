@@ -13,8 +13,11 @@ class SessionCosumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def __get_session(self):
-        obj: SessionsList = SessionsList.objects.select_related('user', 'content_type').get(pk=self.session_id) # slave
-        data_obj: BaseData = obj.content_object # master
+        try:
+            obj: SessionsList = SessionsList.objects.select_related('user', 'content_type').get(pk=self.session_id) # slave
+            data_obj: BaseData = obj.content_object # master
+        except ObjectDoesNotExist:
+            return None, None
 
         return obj, data_obj
 
@@ -34,10 +37,9 @@ class SessionCosumer(AsyncWebsocketConsumer):
             self.start_read()
 
     async def disconnect(self, code):
-        # TODO: Think of a better solution
-        try:
-            obj, data_obj = await self.__get_session()
-        except ObjectDoesNotExist:
+        obj, data_obj = await self.__get_session()
+
+        if obj is None or data_obj is None:
             return
 
         if obj.content_type.model == 'sshdata':
