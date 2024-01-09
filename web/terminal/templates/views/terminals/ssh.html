@@ -8,10 +8,10 @@
 {% block meta_tags %}
 <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
 <script src="{% static 'js/communicate.js' %}"></script>
-<link rel="stylesheet" href="{% static 'vendor/Xterm/xterm.min.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
-<script type="text/javascript" src="{% static 'vendor/Xterm/xterm.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'vendor/Xterm/xterm-addon-fit.min.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
 <script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
 <script type="text/javascript">
     var UserobjectPk = {{ user_object.pk }};
