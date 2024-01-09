@@ -56,56 +56,10 @@ class TerminalManager {
 
     setupResizeListener() {
         window.addEventListener('resize', () => {
-            this.handleWindowResize();
+            if (this.term && this.term.fitAddon) {
+                this.term.fitAddon.fit();
+            }
         });
     }
-
-    handleWindowResize() {
-        if (this.term) {
-            this.resizeTerminal();
-        }
-    }
-
-    resizeTerminal() {
-        const geometry = this.currentGeometry();
-        if (this.term && geometry.cols > 0 && geometry.rows > 0) {
-            this.term.resize(geometry.cols, geometry.rows);
-        }
-    }
-
-     currentGeometry() {
-        try {
-            this.getCellSize();
-        } catch (TypeError) {
-            this.parseXtermStyle()
-        }
-
-        const cols = parseInt(window.innerWidth / this.style.width, 10) - 1;
-        const rows = parseInt(window.innerHeight / this.style.height, 10);
-        return { cols, rows };
-    }
-
-     getCellSize() {
-        if (this.term) {
-            this.style.width = this.term._core._renderService._renderer.dimensions.actualCellWidth;
-            this.style.height = this.term._core._renderService._renderer.dimensions.actualCellHeight;
-        }
-    }
-
-    parseXtermStyle() {
-        const text = document.querySelector('.xterm-helpers style').textContent;
-        const widthMatch = text.match(/xterm-normal-char\{width:([0-9.]+)px\}/);
-        const heightMatch = text.match(/div\{height:([0-9.]+)px\}/);
-
-        if (widthMatch && heightMatch) {
-            this.style.width = parseFloat(widthMatch[1]);
-            this.style.height = parseFloat(heightMatch[1]);
-        }
-    }
-}
-
-function toggle_fullscreen(term) {
-    $('#terminal .terminal').toggleClass('fullscreen');
-    term.fitAddon.fit();
 }
 
