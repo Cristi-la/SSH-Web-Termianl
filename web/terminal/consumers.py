@@ -9,6 +9,7 @@ class SessionCosumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session_id = None
+        self.ssh_session_id = None
         self.read_task = None
 
     @database_sync_to_async
@@ -23,10 +24,10 @@ class SessionCosumer(AsyncWebsocketConsumer):
 
     async def connect(self, *args, **kwargs):
         self.session_id = self.scope['url_route']['kwargs']['session_id']
-        await self.channel_layer.group_add(self.session_id, self.channel_name)
-        await self.accept()
-
         obj, data_obj = await self.__get_session()
+        self.ssh_session_id = str(data_obj.id)
+        await self.channel_layer.group_add(self.ssh_session_id, self.channel_name)
+        await self.accept()
 
         if obj.content_type.model == 'sshdata':
             try:
@@ -52,7 +53,7 @@ class SessionCosumer(AsyncWebsocketConsumer):
             message = {'type': 'info', 'content': message}
 
         await self.channel_layer.group_send(
-            self.session_id,
+            self.ssh_session_id,
             {
                 'type': 'group_message_inclusive',
                 'message': message
