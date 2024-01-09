@@ -284,7 +284,7 @@ class SSHData(BaseData):
             'ip': None if ip.strip() == '' else ip.strip(),
             'username': None if username.strip() == '' else username.strip(),
             'password': None if password.strip() == '' else password.strip(),
-            'port': None if port.strip() == '' else port.strip(),
+            'port': port,
             'private_key': None if private_key.strip() == '' else private_key.strip(),
             'passphrase': None if passphrase.strip() == '' else passphrase.strip()
         }
