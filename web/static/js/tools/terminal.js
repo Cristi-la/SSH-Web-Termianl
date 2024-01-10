@@ -100,10 +100,6 @@ function clearFormOnModalClose(modalId, formSelector) {
 }
 
 function createReconnectButton() {
-    const overlay = document.createElement('div');
-    overlay.className = 'overlay';
-    overlay.id = 'ReconnectButton-overlay';
-
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn btn-primary center-button';
@@ -132,10 +128,8 @@ function createReconnectButton() {
 
     button.appendChild(svg);
 
-    overlay.appendChild(button);
-
     const container = document.getElementById('container');
-    container.appendChild(overlay);
+    container.appendChild(button);
 }
 
 function removeReconnectButton() {
