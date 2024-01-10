@@ -1,6 +1,9 @@
+.nav-tabs {
+  border-bottom: 1px solid var(--slate-500) !important;
+}
 .nav-tabs .nav-link {
     background-color: var(--slate-800);
-    color: var(--slate-500);
+    color: var(--slate-300);
     transition: background-color .115s ease-in-out
     color .115s ease-in-out;
     border-radius: 50rem !important;
@@ -18,7 +21,7 @@
 
 .nav-tabs .nav-link:hover {
     background-color: var(--slate-600);
-    color: var(--slate-300);
+    color: var(--slate-200);
     border: 1px solid var(--slate-400);
 }
 .nav-tabs .nav-link#nav-create-tab {
@@ -35,7 +38,14 @@
     background-color: var(--slate-300);
     color: var(--slate-800);
     font-weight: bold;
-    border: .5px solid var(--slate-900);
+    border: 1px solid var(--slate-900);
+}
+
+.nav-tabs input.nav-link.active {
+  background-color: var(--slate-300);
+  color: var(--slate-700);
+  font-weight: bold;
+  border: 2px solid var(--sky-900);
 }
 
 /* ADD button */
@@ -74,16 +84,17 @@
 
   
   .menu {
-    background-color: red;
+    border: 1px solid var(--slate-600);
     border-radius: 10px;
     box-shadow: 0 10px 20px #40404015;
+    background-color: #212529;
   }
   
   .menu-list {
     margin: 0;
     display: block;
     width: 100%;
-    padding: 8px;
+    padding: 0px;
   }
   
   .menu-list+.menu-list {
@@ -95,9 +106,10 @@
   }
   
   .menu-sub-list {
+    background-color: #212529;
     display: none;
-    padding: 8px;
-    background-color: red;
+    padding: 0px;
+    border: 1px solid var(--slate-500);
     border-radius: 10px;
     box-shadow: 0 10px 20px rgba(#404040, 0.15);
     position: absolute;
@@ -113,85 +125,56 @@
     left: -100%;
     right: 0;
   }
-  
+      /* background-color: #212529; */
   .menu-item {
     position: relative;
   }
   
   .menu-button:hover {
-    background-color:blue;
+    background-color:var(--slate-700);
   }
   
   .menu-button:hover+.menu-sub-list {
     display: flex;
   }
   
-  .menu-button:hover svg {
-    stroke: darkblue;
-  }
-  
   .menu-button {
+    border-radius: 10px;
     font: inherit;
     border: 0;
-    padding: 8px 8px;
-    padding-right: 36px;
+    padding: .3rem .3rem .3rem .6rem;
     width: 100%;
-    border-radius: 8px;
     display: flex;
     align-items: center;
     position: relative;
-    background-color: green;
+    background-color: #212529;
+    color: var(--slate-400);
   }
-  
-  .menu-button--delete:hover {
-    color: var(--color-red);
-  }
-  
-  svg:first-of-type {
-    stroke: var(--color-red);
-  }
-  
-  .menu-button--orange svg:first-of-type {
-    stroke: var(--color-orange);
-  }
-  
-  .menu-button--green svg:first-of-type {
-    stroke: var(--color-green);
-  }
-  
-  .menu-button--purple svg:first-of-type {
-    stroke: var(--color-purple);
-  }
-  
-  .menu-button--blacksvg:first-of-type {
-    stroke: var(--color-black);
-  }
-  
-  .menu-button--checked svg:nth-of-type(2) {
-    stroke: var(--color-purple);
-  }
-  
-  .menu-button svg {
-    width: 20px;
-    height: 20px;
-    margin-right: 10px;
-    stroke: var(--color-text-primary-offset);
-  }
-  
-  .menu-button:nth-of-type(2) {
-    margin-right: 0;
-    position: absolute;
-    right: 8px;
-  }
-  
   .container {
     position: absolute;
-    width: 250px;
+    width: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
+    font-size: .7rem;
+  }
+  .menu-button img {
+    height: 33px;
+    width: 33px;
   }
   
   ul {
     list-style: none;
+  }
+
+  /* SAVED SESSION */
+  .accordion-item .accordion-collapse  {
+    background-color: #2c3136 !important;
+    color: var(--slate-500) !important;
+  }
+  .accordion-button {
+    padding: .6rem .8rem;
+    background-color: #515457 !important;
+    color: var(--slate-400) !important;
   }

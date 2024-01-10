@@ -21,16 +21,16 @@
             <img src="{% static 'images/add.svg' %}" class="d-block" height="16px" width="16px" alt="New" />
           </button>
         </div>
-        <div id="profile" class="order-1 dropdown text-end">
+        <div id="profile" class="order-1 dropdown text-end" style="  border-bottom: 1px solid var(--slate-500) !important;">
             <a href="#" class="d-block link-dark text-decoration-none dropdown-toggle" id="user_profile" data-bs-toggle="dropdown" aria-expanded="false">
                 <img src="https://api.dicebear.com/7.x/pixel-art/svg?seed={{user.username}}" alt="mdo" width="36" height="36" class="rounded-circle border-slate-700">
             </a>
             <ul class="dropdown-menu text-small dropdown-menu-dark" aria-labelledby="user_profile">
                 <li>
-                    <a class="dropdown-item" href="#" style="color: var(--slate-400)">
+                    <button class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" style="color: var(--slate-400)">
                         <img class="align-top px-1" src="{% static 'images/saved.svg' %}" />
                         My sessions
-                    </a>
+                    </button>
                 </li>
                 {% if user.is_staff or user.is_superuser %}
                 <li>
@@ -57,90 +57,52 @@
 
 <script>
     window.addEventListener('load', function(event) {
-        getSessions().then(sessions => {
-            if (sessions) {
-                addElementsForSessions(sessions);
-                chooseLastElementForSessions(sessions);
-            }
-
-        }).catch(error => {
-            console.error('Error in retrieving sessions:', error);
-        });
+        let sessions = getSessions()
+        addElementsForSessions(sessions);
+        chooseLastElementForSessions(sessions);
 
         document.getElementById('createTerminal').addEventListener('click', (e)=>{
             addCreateTabPanels()
         })
-    });
-    
 
-
-    window.onclick = hideMenu;
-    window.oncontextmenu = rightClick;
-
-function hideMenu() {
-  document.getElementById("contextMenu").style.display = "none";
-}
-
-function rightClick(e) {
-    closeAllDropDowns()
-    
-
-    e.preventDefault();
-    var contextMenuWidth = 250;
-    var contextSubMenuWidth = 250;
-    var menu = document.getElementById("contextMenu")
-    menu.style.display = 'block';
-    var leftPos = ''
-    if (e.pageX < window.innerWidth - contextMenuWidth) {
-        leftPos = `${e.pageX}px`;
-    } else {
-        leftPos = `${e.pageX - contextMenuWidth}px`;
-    }
-    if (e.pageX < window.innerWidth - contextMenuWidth - contextSubMenuWidth) {
-        menu.classList.remove("sub-left");
-    } else {
-        menu.classList.add("sub-left");
-    }
-    menu.style.left = leftPos;
-    menu.style.top = e.pageY + "px";
-
-    document.querySelectorAll('iframe').forEach((iframe)=>{
-        iframe.contentDocument.addEventListener('click', function () {
-            hideMenu();
+        document.getElementById('search-accordion').addEventListener('input', function(event) {
+            const filterValue = event.target.value.trim(); 
+            filterAccordionItems(filterValue);
         });
+
+        prepareSavedSessions()
     });
-}
+
 
 </script>
 
-[
 
-    ]
 <div class="context-menu">
     <div class="container" id="contextMenu" style="display:none">
-      <div class="menu">
-        <ul class="menu-list">
-          <li class="menu-item"><button class="menu-button">Share</button></li>
-          <li class="menu-item"><button class="menu-button">Rename</button></li>
-        </ul>
-        <ul class="menu-list">
-          <li class="menu-item"><button class="menu-button ">Change color</button>
-            <ul class="menu-sub-list">
-              <li class="menu-item"><button class="menu-button">Needs review</button></li>
-              <li class="menu-item"><button class="menu-button">In progress</button></li>
-              <li class="menu-item"><button class="menu-button">Approved</button></li>
-              <li class="menu-item"><button class="menu-button">No status</button></li>
-            </ul>
-          </li>
-          <li class="menu-item"><button class="menu-button">Download</button>
-          </li>
-        </ul>
-        <ul class="menu-list">
-          <li class="menu-item"><button class="menu-button">Close</button></li>
-          <li class="menu-item"><button class="menu-button">Close All</button></li>
-        </ul>
-      </div>
+        <div class="menu">
+        </div>
     </div>
-  </div>
+</div>
+
+<div class="offcanvas offcanvas-end bg-dark" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header text-center" style="color: var(--slate-400); background-color: var(--slate-600);">
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <h5 id="offcanvasRightLabel" class="m-0">My Saved sessions</h5>
+    </div>
+    <div class="offcanvas-body">
+        <form>
+            <div class="input-group mb-3">
+                <input type="text" id="search-accordion" class="form-control" style="background-color: #3d444a !important" placeholder="Session name/ip/hostname" aria-label="Session name/ip" aria-describedby="button-addon2">
+                <button class="btn btn-dark bg-sky-800" type="button" id="button-addon2">Auto Search</button>
+            </div>
+        </form>
+        <div class="h-100 w-100 verflow-auto">
+
+            <div class="accordion accordion-flush bg-dark" id="accordionFlush">
+            </div>
+            
+        </div>
+    </div>
+</div>
 
 {% endblock %}

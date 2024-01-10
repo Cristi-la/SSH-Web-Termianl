@@ -1,41 +1,50 @@
 var session_list = []
+var saved_session_list = []
+var samples = []
 
 function getCookie(name) {
     const cookieValue = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return cookieValue ? cookieValue.pop() : '';
 }
 
-async function fetchData(method, url, data = {}) {
+function fetchData(method, url, data = {}) {
     const csrftoken = getCookie('csrftoken');
-    data.csrfmiddlewaretoken = csrftoken
+    data.csrfmiddlewaretoken = csrftoken;
 
-    console.log('data', data)
-    return fetch(url, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify(data),
-    })
-    .then(response => response.json())
-    .then(result => {
-        console.log('Success:', result);
-        return result;
-    })
-    .catch(error => {
+    console.log('data', data);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url, false);  // Synchronous request
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+    let result;
+
+    try {
+        xhr.send(JSON.stringify(data));
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+            result = JSON.parse(xhr.responseText);
+            console.log('Success:', result);
+        } else {
+            console.error('Error:', xhr.statusText);
+            throw new Error(xhr.statusText);
+        }
+    } catch (error) {
         console.error('Error:', error);
         throw error;
-    });
+    }
+
+    return result;
 }
 
-const getSessions = async () => {
+function getSessions(){
     const method = 'POST';
     const url = window.location.href;
     const data = {};
 
     try {
-        const result = await fetchData(method, url, data);
+        const result = fetchData(method, url, data);
         if (!result.sessions) return []
 
         session_list = result.sessions
@@ -47,18 +56,23 @@ const getSessions = async () => {
     }
 }
 
-const getSession = async (session_id) => {
-    let session = session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
-
-    if (session) return session;
+function getSession(session_id) {
+    if (session_list){
+        let mysession = session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
+        if (mysession) return mysession;
+    }
 
     const method = 'POST';
     const url = window.location.href;
-    var data = {sid: session_id};
+    const data = {sid: session_id};
     try {
-        const result = await fetchData(method, url, data);
-        const sessions = result.sessions
-        return sessions.find((session) => parseInt(session.pk) === parseInt(session_id));
+        const result = fetchData(method, url, data);
+        let tmp_session_list = result.sessions
+
+        let mysession = tmp_session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
+        // session_list.push(mysession)
+
+        return mysession;
     } catch (error) {
         console.error('Error in getSession:', error);
         
@@ -66,69 +80,116 @@ const getSession = async (session_id) => {
     return null;
 };
 
-
-const deleteCurrentSession = async () => {
-    const method = 'DELETE';
+function getSavedSessions() {
+    const method = 'PATCH';
     const url = window.location.href;
-    const data = {};
+    try {
+        const result = fetchData(method, url);
+        saved_session_list = result.saved_sessions
+        samples = result.samples
+
+        return saved_session_list;
+    } catch (error) {
+        console.error('Error in getSession:', error);
+        
+    }
+};
+function openSavedSessions(save_session_id) {
+    const method = 'PUT';
+    const url = window.location.href;
+    const data = {save_session: save_session_id}
 
     try {
-        return await fetchData(method, url, data);
+        const result = fetchData(method, url, data);
+        return result.session_id;
     } catch (error) {
-        console.error('Error in deleteCurrentSession:', error);
+        console.error('Error in getSession:', error);
+        
+    }
+};
+
+
+// function deleteCurrentSession() {
+//     const method = 'DELETE';
+//     const url = window.location.href;
+
+//     try {
+//         return fetchData(method, url);
+//     } catch (error) {
+//         console.error('Error in deleteCurrentSession:', error);
+//         return null;
+//     }
+// }
+
+function deleteSession(session_id) {
+    const session = getSession(session_id)
+    const method = 'DELETE';
+    const url = session.url;
+
+    try {
+        return fetchData(method, url);
+    } catch (error) {
+        console.error('Error in deleteSession:', error);
         return null;
     }
 }
 
-const updateSession = async (session_id, name) => {
-    const session = await getSession(session_id)
-    const url = session.url;
-    const method = 'PATCH';
-    const data = {'name': name};
+function deleteAllSessions() {
+    const method = 'DELETE';
+    const url = window.location.href;
 
     try {
-        return await fetchData(method, url, data);
+        return fetchData(method, url);
+    } catch (error) {
+        console.error('Error in deleteAllSessions:', error);
+        return null;
+    }
+}
+
+function deleteSaveSession(save_session_id) {
+    const method = 'DELETE';
+    const url = window.location.href;
+    const data = {save_session: save_session_id}
+
+    try {
+        return fetchData(method, url, data);
+    } catch (error) {
+        console.error('Error in deleteSession:', error);
+        return null;
+    }
+}
+
+
+function updateSession(session_id, name, color){
+    const session = getSession(session_id)
+    const url = session.url;
+    const method = 'PATCH';
+    let data = {
+        'name': name,
+        'color': color,
+    };
+
+    data = Object.fromEntries(
+        Object.entries(data).filter(([_, value]) => value !== null && value !== '' && value !== undefined)
+    );
+
+    __update_session(session_id, data)
+
+    try {
+        return fetchData(method, url, data);
     } catch (error) {
         console.error('Error in updateSession:', error);
         return null;
     }
 }
 
-/// bootstrap
-function closeAllDropDowns(){
-    const dropdownElementList = document.querySelectorAll('.dropdown-toggle')
-    const dropdownList = [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl))
-    dropdownList.forEach(element => element.hide())
+function __update_session(session_id, data){
+    let index = session_list.findIndex((session) => parseInt(session.pk) === parseInt(session_id));
+    console.log('Update sesion data:', session_id, index)
+    if (index == -1) return;
+    
+    for (const key in data) {
+        session_list[index][key] = data[key];
+    }
 }
 
-// Events
-function emitSingleEvent(fun_name, args){
-    if (window.parent)
-        window.parent.postMessage({
-            run: [
-                {
-                    function: fun_name, 
-                    args: args,
-                },
-            ]
-        })
-}
-function emitCloseEvent(session_id){
-    console.log('session close event')
-    emitSingleEvent('removeElementsForSession', [session_id])
-}
-
-function emitElementForSessionEvent(current_id, session_id, name){
-    console.log('session update event')
-    emitSingleEvent('updateElementForSession', [current_id, session_id, name])
-}
-
-// window.addEventListener("load", (e) => {
-//     document.querySelectorAll(ELEMENT_ID_CLOSE).forEach((element) => {
-//         element.addEventListener('click', (e) => {
-//             id = e.target.getAttribute('data-session-id')
-
-//             if (id) emitCloseEvent(id)
-//         });
-//     });
-// });

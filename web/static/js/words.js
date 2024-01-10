@@ -95,7 +95,7 @@ function startAnimation() {
     wordInterval = setInterval(() => {
         createWord();
         removeWordsAtBottom();
-    }, 500); // Add a new word every second
+    }, 100); // Add a new word every second
 }
 
 function stopAnimation() {

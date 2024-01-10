@@ -11,7 +11,7 @@ from terminal.models import SavedHost
 class SSHDataForm(forms.Form):
     buttons = [
         "<button class='btn btn-success rounded-pill px-5 m-1' value='open' name='submit' type='submit' >Open</button>",
-        "<button class='btn btn-info rounded-pill px-5 m-1' value='save' name='submit' type='submit' >Save and Open</button>"
+        "<button class='btn btn-info rounded-pill px-5 m-1' value='save' name='submit' onclick='updateSaveSessionsEvent()' type='submit' >Save and Open</button>"
     ]
 
     @property
