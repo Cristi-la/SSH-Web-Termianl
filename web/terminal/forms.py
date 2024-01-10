@@ -62,3 +62,15 @@ class SSHDataForm(forms.Form):
             raise forms.ValidationError(errors)
 
         return super().clean()
+
+class ReconnectForm(forms.Form):
+    username = forms.CharField(max_length=255, required=False)
+    password = forms.CharField(widget=forms.PasswordInput, required=False)
+    private_key = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), required=False)
+    passphrase = forms.CharField(widget=forms.PasswordInput, required=False)
+
+    field_groups = [
+        'username',
+        'password',
+        ('private_key', 'passphrase'),
+    ]

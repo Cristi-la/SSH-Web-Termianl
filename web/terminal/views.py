@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, RedirectView
 from terminal.models import SSHData, NotesData, SessionsList, SavedHost
 from django.shortcuts import render, redirect
-from terminal.forms import SSHDataForm
+from terminal.forms import SSHDataForm, ReconnectForm
 from django.urls import reverse, reverse_lazy
 from web.templates import TemplateSession, TemplateCreateSession
 from django.shortcuts import get_object_or_404
@@ -48,8 +48,10 @@ class SSHDetailView(TemplateSession):
 
     def get(self, request, *args, **kwargs): # DONE
         data_obj = self.get_object()
+        form = ReconnectForm()
 
         basic_data = {
+            'form': form,
             'object': data_obj,
             'user_object': data_obj.sessions.get(user=self.request.user),
         }
@@ -89,7 +91,7 @@ class SSHCreateView(TemplateCreateSession): #DONE
 
     def get(self, request, *args, **kwargs):
         form = self.get_form()
-
+        print('AAAAAA')
         return render(
             request, 
             self.template_name, 

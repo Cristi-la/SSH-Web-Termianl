@@ -4,6 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.exceptions import ObjectDoesNotExist
 from terminal.models import SessionsList, BaseData
 from channels.db import database_sync_to_async
+from asgiref.sync import sync_to_async
 
 class SessionCosumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -31,10 +32,11 @@ class SessionCosumer(AsyncWebsocketConsumer):
 
         if obj.content_type.model == 'sshdata':
             try:
-                await data_obj.check_cache_and_update_flag()
                 await data_obj.connect()
             except Exception as e:
                 await self.send_group_message_inclusive(e)
+                await self.send_group_message_inclusive(type='action', message='require_reconnect')
+
             self.start_read()
 
     async def disconnect(self, code):
@@ -46,9 +48,11 @@ class SessionCosumer(AsyncWebsocketConsumer):
         if obj.content_type.model == 'sshdata':
             await data_obj.disconnect()
 
-    async def send_group_message_inclusive(self, message):
-        if isinstance(message, Exception):
-            message = {'type': 'error', 'error_message': str(message)}
+    async def send_group_message_inclusive(self, message, type=None):
+        if type is not None:
+            message = {'type': type, 'content': message}
+        elif isinstance(message, Exception):
+            message = {'type': 'error', 'content': str(message)}
         else:
             message = {'type': 'info', 'content': message}
 
@@ -66,17 +70,42 @@ class SessionCosumer(AsyncWebsocketConsumer):
         }))
 
     async def receive(self, text_data=None, bytes_data=None):
-        text_data_json = json.loads(text_data)
+        message = json.loads(text_data)
+        obj, data_obj = await self.__get_session()
 
-        data = text_data_json.get('data')
-        if data:
-            obj, data_obj = await self.__get_session()
+        if obj.content_type.model == 'sshdata':
+            if message.get('action') == 'execute':
+                data = message.get('data')
+                if data:
+                    obj, data_obj = await self.__get_session()
 
-            if obj.content_type.model == 'sshdata':
+                    try:
+                        await data_obj.send(data)
+                    except Exception as e:
+                        await self.send_group_message_inclusive(e)
+                    self.start_read()
+
+            elif message.get('action') == 'reconnect':
+                data = message.get('data')
+                obj, data_obj = await self.__get_session()
+
+                await sync_to_async(
+                    lambda: data_obj.cache_credentials(
+                        cache_key=data_obj.id,
+                        username=data.get('username'),
+                        password=data.get('password'),
+                        private_key=data.get('private_key'),
+                        passphrase=data.get('passphrase')
+                    )
+                )()
+
                 try:
-                    await data_obj.send(data)
+                    await data_obj.connect()
                 except Exception as e:
                     await self.send_group_message_inclusive(e)
+                    await self.send_group_message_inclusive(type='action', message='require_reconnect')
+
+                await self.send_group_message_inclusive(type='action', message='reconnect_successful')
                 self.start_read()
 
     def start_read(self):

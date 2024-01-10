@@ -1,71 +1,93 @@
-
 {% extends "base.html" %}
 
 {% load static %}
 {% load component_tags %}
+{% load django_bootstrap5 %}
+{% load django_bootstrap_input_group %}
 
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
-<link rel="stylesheet" href="{% static 'css/subpage.css' %}">
-<script src="{% static 'js/communicate.js' %}"></script>
-<link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/terminal.css' %}">
-<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
-<script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
-<script type="text/javascript">
-    var UserobjectPk = {{ user_object.pk }};
-</script>
-<script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
+    <script src="{% static 'js/communicate.js' %}"></script>
+    <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
+    <script type="text/javascript">
+        var UserobjectPk = {{ user_object.pk }};
+    </script>
+    <script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
-<main id="main" class="position-relative">
-<div class="position-absolute end-0 start-0">sss</div>
+    <main id="main" class="position-relative">
+        <div class="position-absolute end-0 start-0">sss</div>
 
-    {% comment %} <pre>
+        {% comment %}
+            <pre>
 
-        <b>SSHData</b>: "{{object}}"
-                ID "{{object.pk}}"
-                Name "{{object.name}}"
+        <b>SSHData</b>: "{{ object }}"
+                ID "{{ object.pk }}"
+                Name "{{ object.name }}"
     
     
-        <b>SessionsList</b>: "{{user_object}}"
-                ID "{{user_object.pk}}" --> <i>this will be use to get websocket data</i>
-                Name "{{user_object.name}}"
+        <b>SessionsList</b>: "{{ user_object }}"
+                ID "{{ user_object.pk }}" --> <i>this will be use to get websocket data</i>
+                Name "{{ user_object.name }}"
     
     </pre>
 
-</main>
+            </main>
 
-<button id="close" data-session-id="{{user_object.pk}}">Close connn</button> {% endcomment %}
+            <button id="close" data-session-id="{{ user_object.pk }}">Close connn</button> {% endcomment %}
 
-<main>
-    <div id="container">
-        <div id="terminal"></div>
+    <main>
+        <div id="container">
+            <div id="terminal"></div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="ReconnectModal" tabindex="-1" role="dialog" aria-labelledby="ReconnectModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content bg-dark">
+                <div class="modal-body">
+                    <button type="button" class="btn-close btn-close-white position-absolute end-0 top-0 m-2"
+                            data-bs-dismiss="modal" aria-label="Close"></button>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% bootstrap_grouped_form form %}
+                        <div class="d-flex justify-content-center">
+                            <button class='btn btn-success rounded-pill px-5 m-1' value='reconnect' name='reconnect'
+                                    type='submit'>Reconnect
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</main>
+
+    <script type="text/javascript">
+
+        window.addEventListener('load', () => {
+            emitElementForSessionEvent('create', '{{ object.pk }}', '{{ user_object.name }}');
 
 
-<script type="text/javascript">
-
-    window.addEventListener('load', ()=>{
-        emitElementForSessionEvent('create', '{{ object.pk }}', '{{ user_object.name }}');
-
-
-        //.getElementById('close').addEventListener('click', (e)=>{
-        //     deleteCurrentSession().then(result => {
-        //        console.log(result)
-        //        id = e.target.getAttribute('data-session-id')
-        //        if (id) emitCloseEvent(id)
-        //
-        //    }).catch(error => {
-        //        console.error('Error in deleting sessions:', error);
-        //    });
-        //})
-    });
-</script>
+            //.getElementById('close').addEventListener('click', (e)=>{
+            //     deleteCurrentSession().then(result => {
+            //        console.log(result)
+            //        id = e.target.getAttribute('data-session-id')
+            //        if (id) emitCloseEvent(id)
+            //
+            //    }).catch(error => {
+            //        console.error('Error in deleting sessions:', error);
+            //    });
+            //})
+        });
+    </script>
 
 
 {% endblock %}
