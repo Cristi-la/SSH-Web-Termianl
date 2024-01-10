@@ -11,6 +11,7 @@ from django.urls import reverse
 from terminal.ssh import SSHModule
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
+from asyncio import create_task
 
 class AccManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -177,6 +178,7 @@ class SSHData(BaseData):
     ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the host.')
     hostname = models.CharField(max_length=255, blank=True, null=True, help_text='The hostname of the host.')
     port = models.PositiveIntegerField(default=22, blank=True, null=True, help_text='The port number for accessing the host.')
+    content = models.TextField(blank=True, null=False, default='', help_text='All terminal content for this ssh session')
 
     @property
     def create_url(self):
@@ -195,7 +197,13 @@ class SSHData(BaseData):
         self.delete()
 
     async def read(self):
-        return await SSHModule.read(await self.__get_session_id())
+        data = await SSHModule.read(await self.__get_session_id())
+
+        if data is not None and data != '':
+            # await self.__update_content(data)
+            create_task(self.__update_content(data))
+
+        return data
 
     async def send(self, data):
         try:
@@ -223,6 +231,7 @@ class SSHData(BaseData):
             raise
 
     async def disconnect(self):
+        await self.__update_content('\n\r')
         await SSHModule.disconnect(await self.__get_session_id())
 
     @sync_to_async
@@ -232,6 +241,15 @@ class SSHData(BaseData):
     async def check_cache_and_update_flag(self):
         if cache.get(await self.__get_session_id()) is None:
             self.CACHED_CREDENTIALS = False
+
+    async def __update_content(self, data):
+        self.content += data
+        print('saving: ', data)
+        await sync_to_async(self.save)()
+
+    async def get_content(self):
+        print('hmm: ', self.content)
+        return self.content
 
     @classmethod
     def cache_credentials(cls, username, password, private_key, passphrase, cache_key):
