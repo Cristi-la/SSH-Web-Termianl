@@ -4,12 +4,15 @@ document.addEventListener("DOMContentLoaded", function () {
     terminalManager = new TerminalManager();
     terminalManager.createTerminal();
     terminalManager.openTerminal(document.getElementById('terminal'));
+    const form = document.querySelector('#ReconnectModal form');
+    form.addEventListener('submit', handleFormSubmit);
+    clearFormOnModalClose('ReconnectModal', 'form');
 });
 
 class TerminalManager {
     constructor() {
         this.term = null
-        this.style = { width: null, height: null };
+        this.style = {width: null, height: null};
     }
 
     createTerminal() {
@@ -45,9 +48,13 @@ class TerminalManager {
 
         if (this.term) {
             this.term.onData(data => {
-                this.socket.send(JSON.stringify({'data': data}));
+                this.sendData(JSON.stringify({'action': 'execute', 'data': data}));
             });
         }
+    }
+
+    sendData(data_json) {
+        this.socket.send(data_json);
     }
 
     writeMessage(message) {
@@ -56,56 +63,78 @@ class TerminalManager {
 
     setupResizeListener() {
         window.addEventListener('resize', () => {
-            this.handleWindowResize();
+            if (this.term && this.term.fitAddon) {
+                this.term.fitAddon.fit();
+            }
         });
     }
+}
 
-    handleWindowResize() {
-        if (this.term) {
-            this.resizeTerminal();
-        }
-    }
+function handleFormSubmit(event) {
+    event.preventDefault();
 
-    resizeTerminal() {
-        const geometry = this.currentGeometry();
-        if (this.term && geometry.cols > 0 && geometry.rows > 0) {
-            this.term.resize(geometry.cols, geometry.rows);
-        }
-    }
+    let formData = new FormData(event.target);
+    let data = {};
+    formData.forEach((value, key) => data[key] = value);
 
-     currentGeometry() {
-        try {
-            this.getCellSize();
-        } catch (TypeError) {
-            this.parseXtermStyle()
-        }
+    let json = JSON.stringify({'action': 'reconnect', 'data': data});
+    terminalManager.sendData(json);
 
-        const cols = parseInt(window.innerWidth / this.style.width, 10) - 1;
-        const rows = parseInt(window.innerHeight / this.style.height, 10);
-        return { cols, rows };
-    }
+    event.target.reset();
 
-     getCellSize() {
-        if (this.term) {
-            this.style.width = this.term._core._renderService._renderer.dimensions.actualCellWidth;
-            this.style.height = this.term._core._renderService._renderer.dimensions.actualCellHeight;
-        }
-    }
+    let modalElement = document.getElementById('ReconnectModal');
+    let modalInstance = bootstrap.Modal.getInstance(modalElement);
+    modalInstance.hide();
+}
 
-    parseXtermStyle() {
-        const text = document.querySelector('.xterm-helpers style').textContent;
-        const widthMatch = text.match(/xterm-normal-char\{width:([0-9.]+)px\}/);
-        const heightMatch = text.match(/div\{height:([0-9.]+)px\}/);
-
-        if (widthMatch && heightMatch) {
-            this.style.width = parseFloat(widthMatch[1]);
-            this.style.height = parseFloat(heightMatch[1]);
-        }
+function clearFormOnModalClose(modalId, formSelector) {
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+        const form = modalElement.querySelector(formSelector);
+        modalElement.addEventListener('hide.bs.modal', () => {
+            if (form) {
+                form.reset();
+            }
+        });
     }
 }
 
-function toggle_fullscreen(term) {
-    $('#terminal .terminal').toggleClass('fullscreen');
-    term.fitAddon.fit();
+function createReconnectButton() {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-primary center-button';
+    button.id = 'ReconnectButton';
+    button.setAttribute('data-bs-toggle', 'modal');
+    button.setAttribute('data-bs-target', '#ReconnectModal');
+
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNamespace, 'svg');
+    svg.setAttribute('xmlns', svgNamespace);
+    svg.setAttribute('width', '32');
+    svg.setAttribute('height', '32');
+    svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('class', 'bi bi-arrow-counterclockwise');
+    svg.setAttribute('viewBox', '0 0 16 16');
+
+    const path1 = document.createElementNS(svgNamespace, 'path');
+    path1.setAttribute('fill-rule', 'evenodd');
+    path1.setAttribute('d', 'M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z');
+
+    const path2 = document.createElementNS(svgNamespace, 'path');
+    path2.setAttribute('d', 'M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466');
+
+    svg.appendChild(path1);
+    svg.appendChild(path2);
+
+    button.appendChild(svg);
+
+    const container = document.getElementById('container');
+    container.appendChild(button);
 }
 
+function removeReconnectButton() {
+    const overlay = document.getElementById('ReconnectButton-overlay');
+    if (overlay) {
+        overlay.parentNode.removeChild(overlay);
+    }
+}

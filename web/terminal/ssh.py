@@ -34,16 +34,16 @@ class SSHModule:
             raise
 
         if group_name not in cls.instances:
-            try:
-                channel = await cls.__open_channel(ssh)
-            except SSHException:
-                raise
             cls.instances[group_name] = ssh
-            cls.channels[group_name] = channel
             cls.active_connections[group_name] = 1
         else:
             cls.active_connections[group_name] += 1
             ssh.close()
+
+        try:
+            await cls.__open_channel(group_name)
+        except SSHException:
+            raise
 
     @staticmethod
     async def __connect(host, username, password, port, pkey, passphrase):
@@ -63,19 +63,20 @@ class SSHModule:
 
         return ssh
 
-    @staticmethod
-    async def __open_channel(ssh):
-        try:
-            loop = asyncio.get_running_loop()
-            transport = await loop.run_in_executor(None, ssh.get_transport)
-            channel = await loop.run_in_executor(None, transport.open_session)
-            await loop.run_in_executor(None, lambda: channel.get_pty(term='xterm'))
-            await loop.run_in_executor(None, channel.invoke_shell)
-            channel.setblocking(0)
-
-            return channel
-        except Exception as e:
-            return {'error': str(e)}
+    @classmethod
+    async def __open_channel(cls, group_name):
+        if group_name not in cls.channels:
+            ssh = cls.instances.get(group_name)
+            try:
+                loop = asyncio.get_running_loop()
+                transport = await loop.run_in_executor(None, ssh.get_transport)
+                channel = await loop.run_in_executor(None, transport.open_session)
+                await loop.run_in_executor(None, lambda: channel.get_pty(term='xterm'))
+                await loop.run_in_executor(None, channel.invoke_shell)
+                channel.setblocking(0)
+                cls.channels[group_name] = channel
+            except Exception as e:
+                return {'error': str(e)}
 
     @classmethod
     async def disconnect(cls, group_name):
@@ -91,9 +92,12 @@ class SSHModule:
                 if ssh_client:
                     ssh_client.close()
 
-                del cls.instances[group_name]
-                del cls.channels[group_name]
-                del cls.active_connections[group_name]
+                if group_name in cls.instances:
+                    del cls.instances[group_name]
+                if group_name in cls.channels:
+                    del cls.channels[group_name]
+                if group_name in cls.active_connections:
+                    del cls.active_connections[group_name]
 
     @classmethod
     async def send(cls, group_name, data):

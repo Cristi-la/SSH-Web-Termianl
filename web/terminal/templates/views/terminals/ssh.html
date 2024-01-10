@@ -1,38 +1,55 @@
-
 {% extends "base.html" %}
 
 {% load static %}
 {% load component_tags %}
+{% load django_bootstrap5 %}
+{% load django_bootstrap_input_group %}
 
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
-<link rel="stylesheet" href="{% static 'css/subpage.css' %}">
-<script  src="{% static 'js/events.js' %}"></script>
-<link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/terminal.css' %}">
-<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
-<script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
-<script type="text/javascript">
-    var UserobjectPk = {{ user_object.pk }};
-</script>
-<script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
+    <script  src="{% static 'js/events.js' %}"></script>
+    <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
+    <script type="text/javascript">
+        var UserobjectPk = {{ user_object.pk }};
+    </script>
+    <script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
-<main id="main" class="position-relative">
-<div class="position-absolute end-0 start-0">sss</div>
+    <main>
+        <div id="container">
+            <div id="terminal"></div>
+        </div>
+    </main>
 
-
-<main>
-    <div id="container">
-        <div id="terminal"></div>
+    <div class="modal fade" id="ReconnectModal" tabindex="-1" role="dialog" aria-labelledby="ReconnectModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content bg-dark">
+                <div class="modal-body">
+                    <button type="button" class="btn-close btn-close-white position-absolute end-0 top-0 m-2"
+                            data-bs-dismiss="modal" aria-label="Close"></button>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% bootstrap_grouped_form form %}
+                        <div class="d-flex justify-content-center">
+                            <button class='btn btn-success rounded-pill px-5 m-1' value='reconnect' name='reconnect'
+                                    type='submit'>Reconnect
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</main>
 
-
-<script type="text/javascript">
+    <script type="text/javascript">
 
     window.addEventListener('load', ()=>{
         emitElementForSessionEvent('create', '{{ user_object.pk }}', '{{ user_object.name }}');

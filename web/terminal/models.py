@@ -30,7 +30,6 @@ class AccManager(BaseUserManager):
 class AccountData(AbstractBaseUser, PermissionsMixin):
     saved_hosts: 'SavedHost'
     sessions: 'SessionsList'
-    sessions: 'SessionsList'
 
     email = models.EmailField(max_length=40, unique=False, help_text='The email address of the user.')
     first_name = models.CharField(max_length=30, blank=True, null=True, help_text='The first name of the user.')
@@ -203,22 +202,22 @@ class SSHData(BaseData):
         except Exception:
             raise
 
-    async def connect(self, hostname=None, ip=None, username=None, port=None, password=None, private_key=None, passphrase=None):
+    async def connect(self, username=None, password=None, private_key=None, passphrase=None):
+        await self.check_cache_and_update_flag()
+
         if self.CACHED_CREDENTIALS:
             cache_key = f'{await self.__get_session_id()}'
             cache_credentials = cache.get(cache_key)
-            hostname = cache_credentials.get('hostname')
-            ip = cache_credentials.get('ip')
             username = cache_credentials.get('username')
             password = cache_credentials.get('password')
-            port = cache_credentials.get('port')
             private_key = cache_credentials.get('private_key')
             passphrase = cache_credentials.get('passphrase')
+
         try:
             await SSHModule.connect_or_create_instance(await self.__get_session_id(),
-                                                       host=ip if hostname is None else hostname,
+                                                       host=self.ip if self.hostname is None else self.hostname,
                                                        username=username, password=password, pkey=private_key,
-                                                       passphrase=passphrase, port=port)
+                                                       passphrase=passphrase, port=self.port)
         except Exception:
             raise
 
@@ -229,10 +228,23 @@ class SSHData(BaseData):
     def __get_session_id(self):
         return self.sessions.all().first().object_id
 
-
     async def check_cache_and_update_flag(self):
         if cache.get(await self.__get_session_id()) is None:
             self.CACHED_CREDENTIALS = False
+
+    @classmethod
+    def cache_credentials(cls, username, password, private_key, passphrase, cache_key):
+        credentials = {
+            key: str(value).strip() if value else None
+            for key, value in {
+                'username': username,
+                'password': password,
+                'private_key': private_key,
+                'passphrase': passphrase
+            }.items()
+        }
+        cache.set(cache_key, credentials, timeout=60)
+        cls.CACHED_CREDENTIALS = True
 
     @classmethod
     def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, session_open, save=False, **kwargs):
@@ -278,20 +290,8 @@ class SSHData(BaseData):
 
         ssh_data.logs.add(log_entry)
 
-        cache_key = f'{session.object_id}'
-        credentials = {
-            key: str(value).strip() if value else None
-            for key, value in {
-                'ip': ip,
-                'username': username,
-                'password': password,
-                'port': port,
-                'private_key': private_key,
-                'passphrase': passphrase
-            }.items()
-        }
-        cache.set(cache_key, credentials, timeout=60)
-        cls.CACHED_CREDENTIALS = True
+        cls.cache_credentials(username=username, password=password, private_key=private_key,
+                              passphrase=passphrase, cache_key=session.object_id)
 
         return ssh_data
 

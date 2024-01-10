@@ -455,6 +455,8 @@ function updatePanelFromTabPanels(current_id, session_id){
     currnetTabPane.id = `session-${session_id}`
     currnetTabPane.setAttribute('aria-labelledby', `nav-${session_id}-tab`);
   }
+
+  console.log('new id', currnetTabPane.id)
 }
 
 // SESSIONS = TAB + PANEL

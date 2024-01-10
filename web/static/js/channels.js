@@ -4,7 +4,6 @@ const serverSocket = new WebSocket(url);
 
 serverSocket.onerror = function(e) {
     terminalManager.writeMessage('WebSocket connection error\n\r')
-    console.log(terminalManager)
 };
 
 serverSocket.onopen = function () {
@@ -16,9 +15,13 @@ serverSocket.onmessage = function(e) {
 
     if (data.message) {
         if (data.message.type === 'error') {
-            terminalManager.writeMessage(data.message.error_message + '\n\r');
+            terminalManager.writeMessage(data.message.content + '\n\r');
         } else if (data.message.type === 'info') {
             terminalManager.writeMessage(data.message.content);
+        } else if (data.message.type === 'action' && data.message.content === 'require_reconnect') {
+            createReconnectButton()
+        }  else if (data.message.type === 'action' && data.message.content === 'reconnect_successful') {
+            removeReconnectButton()
         }
     }
 }
