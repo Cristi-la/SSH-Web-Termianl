@@ -173,6 +173,9 @@ class NotesData(BaseData):
 
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
+    BUFFER_SIZE_LIMIT = 8192
+
+    _buffers = {}
 
     ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the host.')
     hostname = models.CharField(max_length=255, blank=True, null=True, help_text='The hostname of the host.')
@@ -199,8 +202,12 @@ class SSHData(BaseData):
         data = await SSHModule.read(await self.__get_session_id())
 
         if data is not None and data != '':
-            # await self.__update_content(data)
-            create_task(self.__update_content(data))
+            updated_buffer = self.__get_buffer(self.id) + data
+            self.__set_buffer(self.id, updated_buffer)
+
+            if len(updated_buffer) >= self.BUFFER_SIZE_LIMIT:
+                await self.__update_content(self.id)
+
 
         return data
 
@@ -230,7 +237,9 @@ class SSHData(BaseData):
             raise
 
     async def disconnect(self):
-        await self.__update_content('\n\r')
+        updated_buffer = self.__get_buffer(self.id) + '\n\r'*5
+        self.__set_buffer(self.id, updated_buffer)
+        await self.flush_buffer()
         await SSHModule.disconnect(await self.__get_session_id())
 
     @sync_to_async
@@ -241,14 +250,28 @@ class SSHData(BaseData):
         if cache.get(await self.__get_session_id()) is None:
             self.CACHED_CREDENTIALS = False
 
-    async def __update_content(self, data):
-        self.content += data
-        print('saving: ', data)
-        await sync_to_async(self.save)()
+    @classmethod
+    async def __update_content(cls, instance_id):
+        buffer_content = cls.__get_buffer(instance_id)
+        if buffer_content:
+            instance = await sync_to_async(cls.objects.get)(id=instance_id)
+            instance.content += buffer_content
+            await sync_to_async(instance.save)()
+            cls.__set_buffer(instance_id, '')
+
+    @classmethod
+    def __get_buffer(cls, instance_id):
+        return cls._buffers.setdefault(instance_id, '')
+
+    @classmethod
+    def __set_buffer(cls, instance_id, data):
+        cls._buffers[instance_id] = data
 
     async def get_content(self):
-        print('hmm: ', self.content)
         return self.content
+
+    async def flush_buffer(self):
+        await self.__update_content(self.id)
 
     @classmethod
     def cache_credentials(cls, username, password, private_key, passphrase, cache_key):

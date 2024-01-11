@@ -89,7 +89,7 @@ class SessionCosumer(AsyncWebsocketConsumer):
             elif message.get('action') == 'reconnect':
                 data = message.get('data')
                 obj, data_obj = await self.__get_session()
-
+                data = {k: str(v).strip() if v else None for k, v in data.items()}
                 await sync_to_async(
                     lambda: data_obj.cache_credentials(
                         cache_key=data_obj.id,
