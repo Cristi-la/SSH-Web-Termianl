@@ -52,8 +52,18 @@
     <script type="text/javascript">
 
     window.addEventListener('load', ()=>{
-        emitElementForSessionEvent('create', '{{ user_object.pk }}', '{{ user_object.name }}');
-    });
+        emitElementForSessionEvent('create', '{{ user_object.pk }}', '{{ user_object.name }}')
+        const terminalManager = new TerminalManager()
+        terminalManager.createTerminal()
+        terminalManager.openTerminal(document.getElementById('terminal'))
+        const form = document.querySelector('#ReconnectModal form')
+        form.addEventListener('submit', function(event) {
+            handleFormSubmit(event, terminalManager)
+        })
+        clearFormOnModalClose('ReconnectModal', 'form');
+        const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`, terminalManager)
+        socketManager.setup()
+    })
 </script>
 
 
