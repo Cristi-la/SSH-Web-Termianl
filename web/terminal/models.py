@@ -5,13 +5,39 @@ from colorfield.fields import ColorField
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from encrypted_model_fields.fields import EncryptedCharField
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from abc import ABCMeta, abstractmethod
 from django.urls import reverse
 from terminal.ssh import SSHModule
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from asyncio import create_task
+from functools import wraps
+
+def strip_object(data: dict):
+    return  {k: str(v).strip() if v else None for k, v in data.items()}
+
+def strip_args(*args_to_strip: list[str]):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            parsed_kwargs = {}
+            for key, value in kwargs.items():
+                if key in args_to_strip:
+                    parsed_kwargs[key] = value
+
+            for key in parsed_kwargs:
+                kwargs.pop(key)
+
+            return func(
+                *args,
+                **kwargs,
+                **strip_object(parsed_kwargs)
+            )
+
+        return wrapper
+    return decorator
+
 
 class AccManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -180,6 +206,7 @@ class SSHData(BaseData):
     ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the host.')
     hostname = models.CharField(max_length=255, blank=True, null=True, help_text='The hostname of the host.')
     port = models.PositiveIntegerField(default=22, blank=True, null=True, help_text='The port number for accessing the host.')
+    save_session = models.ForeignKey(SavedHost, on_delete=models.SET_NULL, related_name='sshdate', blank=True, null=True, default=None, help_text='Saved Host data reference')
     content = models.TextField(blank=True, null=False, default='', help_text='All terminal content for this ssh session')
 
     @property
@@ -217,22 +244,46 @@ class SSHData(BaseData):
         except Exception:
             raise
 
+    @sync_to_async
+    def get_save_session(self):
+        try:
+            return self.save_session
+        except ObjectDoesNotExist:
+            return None
+
     async def connect(self, username=None, password=None, private_key=None, passphrase=None):
         await self.check_cache_and_update_flag()
 
-        if self.CACHED_CREDENTIALS:
+        save_session = await self.get_save_session()
+
+        if save_session:
+            username = save_session.username
+            password = save_session.password
+            private_key = save_session.private_key
+            passphrase = save_session.passphrase
+            hostname = save_session.ip if save_session.hostname is None else save_session.hostname
+            port = save_session.port
+        elif self.CACHED_CREDENTIALS:
             cache_key = f'{await self.__get_session_id()}'
             cache_credentials = cache.get(cache_key)
             username = cache_credentials.get('username')
             password = cache_credentials.get('password')
             private_key = cache_credentials.get('private_key')
             passphrase = cache_credentials.get('passphrase')
+            hostname = self.ip if self.hostname is None else self.hostname
+            port = self.port
+
 
         try:
-            await SSHModule.connect_or_create_instance(await self.__get_session_id(),
-                                                       host=self.ip if self.hostname is None else self.hostname,
-                                                       username=username, password=password, pkey=private_key,
-                                                       passphrase=passphrase, port=self.port)
+            await SSHModule.connect_or_create_instance(
+                await self.__get_session_id(),
+                host=hostname,
+                username=username,
+                password=password,
+                pkey=private_key,
+                passphrase=passphrase,
+                port=port
+            )
         except Exception:
             raise
 
@@ -275,29 +326,28 @@ class SSHData(BaseData):
 
     @classmethod
     def cache_credentials(cls, username, password, private_key, passphrase, cache_key):
-        credentials = {
-            key: str(value).strip() if value else None
-            for key, value in {
+        credentials = strip_object(
+            {
                 'username': username,
                 'password': password,
                 'private_key': private_key,
                 'passphrase': passphrase
-            }.items()
-        }
+            }
+        )
         cache.set(cache_key, credentials, timeout=60)
         cls.CACHED_CREDENTIALS = True
 
     @classmethod
-    def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, session_open, save=False, **kwargs):
+    @strip_args('name', 'hostname', 'username', 'password', 'private_key', 'passphrase', 'port', 'ip')
+    def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, session_open, save=False, save_session=None, **kwargs):
         ssh_data = cls.objects.create(
             session_master=user,
             session_open = session_open,
             name=name,
-            # TODO: DODAJ DO MODELU JAKIES DODATKOWE POLA JAK POTRZEBUJESZ:
-            # ...W SSHData
             ip=ip,
             hostname=hostname,
             port=port,
+            save_session=save_session,
         )
         ssh_data.save()
         
