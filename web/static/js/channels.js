@@ -1,28 +1,34 @@
-const url = `ws://${window.location.host}/ws/session/${window.UserobjectPk}`;
+class WebSocketManager {
+    constructor(url, terminal) {
+        this.websocket = new WebSocket(url);
+        this.terminal = terminal;
+    }
 
-const serverSocket = new WebSocket(url);
+    setup() {
+        this.websocket.onerror = (e) => {
+            this.terminal.writeMessage('WebSocket connection error\n\r');
+        };
 
-serverSocket.onerror = function(e) {
-    terminalManager.writeMessage('WebSocket connection error\n\r')
-};
+        this.websocket.onopen = () => {
+            if (this.terminal) {
+                this.terminal.setWebSocket(this.websocket);
+            }
+        };
 
-serverSocket.onopen = function () {
-    terminalManager.setWebSocket(serverSocket);
-}
+        this.websocket.onmessage = (e) => {
+            let data = JSON.parse(e.data);
 
-serverSocket.onmessage = function(e) {
-    let data = JSON.parse(e.data);
-
-    if (data.message) {
-        if (data.message.type === 'error') {
-            terminalManager.writeMessage(data.message.content + '\n\r');
-        } else if (data.message.type === 'info') {
-            terminalManager.writeMessage(data.message.content);
-        } else if (data.message.type === 'action' && data.message.content === 'require_reconnect') {
-            createReconnectButton()
-        }  else if (data.message.type === 'action' && data.message.content === 'reconnect_successful') {
-            removeReconnectButton()
-        }
+            if (data.message) {
+                if (data.message.type === 'error') {
+                    this.terminal.writeMessage(data.message.content + '\n\r');
+                } else if (data.message.type === 'info') {
+                    this.terminal.writeMessage(data.message.content);
+                } else if (data.message.type === 'action' && data.message.content === 'require_reconnect') {
+                    createReconnectButton();
+                }  else if (data.message.type === 'action' && data.message.content === 'reconnect_successful') {
+                    removeReconnectButton();
+                }
+            }
+        };
     }
 }
-

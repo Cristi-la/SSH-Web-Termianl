@@ -1,14 +1,3 @@
-let terminalManager
-
-document.addEventListener("DOMContentLoaded", function () {
-    terminalManager = new TerminalManager();
-    terminalManager.createTerminal();
-    terminalManager.openTerminal(document.getElementById('terminal'));
-    const form = document.querySelector('#ReconnectModal form');
-    form.addEventListener('submit', handleFormSubmit);
-    clearFormOnModalClose('ReconnectModal', 'form');
-});
-
 class TerminalManager {
     constructor() {
         this.term = null
@@ -70,7 +59,7 @@ class TerminalManager {
     }
 }
 
-function handleFormSubmit(event) {
+function handleFormSubmit(event, terminalManager) {
     event.preventDefault();
 
     let formData = new FormData(event.target);
@@ -107,26 +96,14 @@ function createReconnectButton() {
     button.setAttribute('data-bs-toggle', 'modal');
     button.setAttribute('data-bs-target', '#ReconnectModal');
 
-    const svgNamespace = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNamespace, 'svg');
-    svg.setAttribute('xmlns', svgNamespace);
-    svg.setAttribute('width', '32');
-    svg.setAttribute('height', '32');
-    svg.setAttribute('fill', 'currentColor');
-    svg.setAttribute('class', 'bi bi-arrow-counterclockwise');
-    svg.setAttribute('viewBox', '0 0 16 16');
+    const img = document.createElement('img');
+    img.setAttribute('src', '/static/images/reconnect.svg');
+    img.setAttribute('fill', '#FFFFFF');
+    img.setAttribute('width', '32');
+    img.setAttribute('height', '32');
+    img.setAttribute('alt', 'Reconnect');
 
-    const path1 = document.createElementNS(svgNamespace, 'path');
-    path1.setAttribute('fill-rule', 'evenodd');
-    path1.setAttribute('d', 'M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z');
-
-    const path2 = document.createElementNS(svgNamespace, 'path');
-    path2.setAttribute('d', 'M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466');
-
-    svg.appendChild(path1);
-    svg.appendChild(path2);
-
-    button.appendChild(svg);
+    button.appendChild(img);
 
     const container = document.getElementById('container');
     container.appendChild(button);
