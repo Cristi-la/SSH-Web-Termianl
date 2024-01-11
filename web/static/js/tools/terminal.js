@@ -133,8 +133,8 @@ function createReconnectButton() {
 }
 
 function removeReconnectButton() {
-    const overlay = document.getElementById('ReconnectButton-overlay');
-    if (overlay) {
-        overlay.parentNode.removeChild(overlay);
+    const button = document.getElementById('ReconnectButton');
+    if (button) {
+        button.remove();
     }
 }
