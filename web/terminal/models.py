@@ -199,7 +199,7 @@ class NotesData(BaseData):
 
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
-    BUFFER_SIZE_LIMIT = 8192
+    BUFFER_SIZE_LIMIT = 65536
 
     _buffers = {}
 
