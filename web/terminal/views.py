@@ -11,7 +11,7 @@ from web.templates import TemplateSession, TemplateCreateSession
 from django.shortcuts import get_object_or_404
 from terminal.models import AccountData
 from terminal.responses import (
-    SESSION_CLOSED, SESSION_UPDATED, 
+    SESSION_CLOSED, SESSION_UPDATED, ALL_SESSION_CLOSED, SAVED_SESSION_CLOSED, NO_MANDATORY_PARAMS
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
@@ -70,6 +70,9 @@ class SSHDetailView(TemplateSession):
         obj = self.get_object()
 
         data = decoded_data(self.request.body)
+
+        if data.get('color') == '-':
+            data['color'] = '#FFFFFF'
 
         if obj.session_master == self.request.user:
             session_master_dict = {field: data.get(field) for field in session_master_fields if field in data and data.get(field)}
@@ -133,9 +136,6 @@ class NoteCreateView(TemplateCreateSession):
 
 class TermianlView(LoginRequiredMixin, TemplateView):
     template_name  = 'views/terminal.html'
-    samples = {
-        'samples': json.dumps(SavedHost.COLOR_PALETTE)
-    }
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return render(request, self.template_name)
@@ -143,24 +143,85 @@ class TermianlView(LoginRequiredMixin, TemplateView):
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         data = decoded_data(self.request.body)
         sid = data.get('sid', False)
-        sessions = SessionsList.get_sessions_for(user=self.request.user) 
+        sessions = SessionsList.objects.filter(user=self.request.user) 
 
         if sid:
             sessions.filter(pk=sid)
 
         sessions_list = {'sessions': []}
+        sessions_list['sid'] = sid
 
         for session in sessions:
-            content_type = session['content_type']
-            object_id = session['object_id']
-            model_class = ContentType.objects.get_for_id(content_type).model_class()
-
-            model_instance = get_object_or_404(model_class, pk=object_id)
-            session['url'] = model_instance.url
-            session['create_url'] = model_instance.create_url
-            sessions_list['sessions'].append(session)
+            content_object = session.content_object
+            sessions_list['sessions'].append({
+                'name': session.name,
+                'color': session.color,
+                'pk': session.pk,
+                'object_id': session.object_id,
+                'content_type': content_object.name,
+                'is_master': content_object.session_master == self.request.user,
+                'session_open': content_object.session_open,
+                'session_open': session.sharing_enabled,
+                'url': content_object.url,
+                'create_url': content_object.create_url,
+            })
         
         return JsonResponse(sessions_list, status=200)
+    
+    def delete(self, request, *args, **kwargs):
+        user = self.request.user
+        data = decoded_data(self.request.body)
+
+        if 'save_session' in data and data.get('save_session'):
+            save_session_id = data.get('save_session')
+
+            save_session = SavedHost.objects.get(user=user, pk=save_session_id) 
+            save_session.delete()
+
+            return SAVED_SESSION_CLOSED
+        else:
+            sessions = SessionsList.objects.filter(user=user) 
+
+            for session in sessions:
+                session.close()
+
+            return ALL_SESSION_CLOSED
+    
+    def patch(self, request, *args, **kwargs):
+        samples = {
+            'samples': SavedHost.COLOR_PALETTE,
+            'saved_sessions': list(SavedHost.objects.filter(user=self.request.user).values(
+                'name', 'hostname', 'ip', 'color', 'pk', 'port', 'created_at'
+            ))
+        }
+
+        return JsonResponse(samples, status=200)
+    
+    def put(self, request, *args, **kwargs):
+        user = self.request.user
+        data = decoded_data(self.request.body)
+
+        if 'save_session' in data and data.get('save_session'):
+            save_session_id = data.get('save_session')
+            save_session = SavedHost.objects.get(user=user, pk=save_session_id) 
+
+            self.object = SSHData.open(
+                user  =user,
+                name = save_session.name,
+                hostname = save_session.hostname,
+                username = save_session.username,
+                password = save_session.password,
+                private_key = save_session.private_key,
+                passphrase = save_session.passphrase,
+                port = save_session.port,
+                ip = save_session.ip,
+                save = False,
+                session_open = False,
+            )
+            session = self.object.sessions.get(user=user)
+
+            return JsonResponse({'session_id':  session.pk}, status=200)
+        return NO_MANDATORY_PARAMS
 
 #  BASE VIEWS:
 class TerminalCreatView(LoginRequiredMixin, TemplateView):

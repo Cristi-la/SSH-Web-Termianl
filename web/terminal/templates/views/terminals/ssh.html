@@ -8,7 +8,7 @@
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
     <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
-    <script src="{% static 'js/communicate.js' %}"></script>
+    <script  src="{% static 'js/events.js' %}"></script>
     <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
 
@@ -23,27 +23,6 @@
 
 
 {% block content %}
-    <main id="main" class="position-relative">
-        <div class="position-absolute end-0 start-0">sss</div>
-
-        {% comment %}
-            <pre>
-
-        <b>SSHData</b>: "{{ object }}"
-                ID "{{ object.pk }}"
-                Name "{{ object.name }}"
-    
-    
-        <b>SessionsList</b>: "{{ user_object }}"
-                ID "{{ user_object.pk }}" --> <i>this will be use to get websocket data</i>
-                Name "{{ user_object.name }}"
-    
-    </pre>
-
-            </main>
-
-            <button id="close" data-session-id="{{ user_object.pk }}">Close connn</button> {% endcomment %}
-
     <main>
         <div id="container">
             <div id="terminal"></div>
@@ -72,22 +51,20 @@
 
     <script type="text/javascript">
 
-        window.addEventListener('load', () => {
-            emitElementForSessionEvent('create', '{{ object.pk }}', '{{ user_object.name }}');
-
-
-            //.getElementById('close').addEventListener('click', (e)=>{
-            //     deleteCurrentSession().then(result => {
-            //        console.log(result)
-            //        id = e.target.getAttribute('data-session-id')
-            //        if (id) emitCloseEvent(id)
-            //
-            //    }).catch(error => {
-            //        console.error('Error in deleting sessions:', error);
-            //    });
-            //})
-        });
-    </script>
+    window.addEventListener('load', ()=>{
+        emitElementForSessionEvent('create', '{{ user_object.pk }}', '{{ user_object.name }}')
+        const terminalManager = new TerminalManager()
+        terminalManager.createTerminal()
+        terminalManager.openTerminal(document.getElementById('terminal'))
+        const form = document.querySelector('#ReconnectModal form')
+        form.addEventListener('submit', function(event) {
+            handleFormSubmit(event, terminalManager)
+        })
+        clearFormOnModalClose('ReconnectModal', 'form');
+        const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`, terminalManager)
+        socketManager.setup()
+    })
+</script>
 
 
 {% endblock %}

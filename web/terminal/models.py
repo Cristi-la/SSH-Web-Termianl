@@ -31,7 +31,6 @@ class AccManager(BaseUserManager):
 class AccountData(AbstractBaseUser, PermissionsMixin):
     saved_hosts: 'SavedHost'
     sessions: 'SessionsList'
-    sessions: 'SessionsList'
 
     email = models.EmailField(max_length=40, unique=False, help_text='The email address of the user.')
     first_name = models.CharField(max_length=30, blank=True, null=True, help_text='The first name of the user.')
@@ -75,7 +74,7 @@ class SavedHost(models.Model):
     # Additional fields
     created_at = models.DateTimeField(auto_now_add=True, help_text='The date and time when the saved host was created.')
     updated_at = models.DateTimeField(auto_now=True, help_text='The date and time when the saved host was last updated.')
-    color = ColorField(format="hexa", help_text="Tab color", samples=COLOR_PALETTE)
+    color = ColorField(format="hexa",  blank=True, null=True, help_text="Tab color", samples=COLOR_PALETTE)
 
     def __str__(self):
         if self.hostname is None:
@@ -253,12 +252,14 @@ class SSHData(BaseData):
 
     @classmethod
     def cache_credentials(cls, username, password, private_key, passphrase, cache_key):
-        cache_key = f'{cache_key}'
         credentials = {
-            'username': None if username.strip() == '' else username.strip(),
-            'password': None if password.strip() == '' else password.strip(),
-            'private_key': None if private_key.strip() == '' else private_key.strip(),
-            'passphrase': None if passphrase.strip() == '' else passphrase.strip()
+            key: str(value).strip() if value else None
+            for key, value in {
+                'username': username,
+                'password': password,
+                'private_key': private_key,
+                'passphrase': passphrase
+            }.items()
         }
         cache.set(cache_key, credentials, timeout=60)
         cls.CACHED_CREDENTIALS = True
@@ -317,7 +318,7 @@ class SessionsList(models.Model):
     user = models.ForeignKey(AccountData, on_delete=models.CASCADE, related_name='sessions', help_text='The user associated with the session.')
     sharing_enabled = models.BooleanField(default=False, help_text='Flag indicating if sharing is enabled for the session.')
     is_active = models.BooleanField(default=True, help_text='Flag indicating if the session is active.')
-    color = ColorField(format="hexa", help_text="Tab color", samples=SavedHost.COLOR_PALETTE)
+    color = ColorField(format="hexa",  blank=True, null=True, help_text="Tab color", samples=SavedHost.COLOR_PALETTE)
 
     # GenericForeignKey to reference either SSHData or NotesData
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, limit_choices_to={'model__in': ['sshdata', 'notesdata']})
@@ -360,12 +361,6 @@ class SessionsList(models.Model):
 
     def close(self):
         self.delete()
-
-    @classmethod
-    def get_sessions_for(cls, user: AccountData):
-        return cls.objects.filter(user=user).values(
-            'name', 'color', 'pk', 'object_id', 'content_type'
-        )
     
     def update_obj(self, data_dict):
         for key, value in data_dict.items():

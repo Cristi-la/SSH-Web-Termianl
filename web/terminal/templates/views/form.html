@@ -8,24 +8,25 @@
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
 <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
+<script  src="{% static 'js/events.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
 
-<main class="vh-100">
+<main class="h-100 overflow-auto">
     <div class="container-sm overflow-auto py-3 col-xxl-6 col-xl-8">
-            <h1 class="fs-1 mt-2 fw-bold text-center">
-                {% if prompt %}{{prompt}}{% else %}Create Session{% endif %}
-            </h1>
-            <form method="post" class="p-4" class="overflow-auto" action="{{action}}">
-                {% csrf_token %}
-                {% bootstrap_grouped_form form %}
+        <h1 class="fs-1 mt-2 fw-bold text-center">
+            {% if prompt %}{{prompt}}{% else %}Create Session{% endif %}
+        </h1>
+        <form method="post" class="p-4" class="overflow-auto" action="{{action}}">
+            {% csrf_token %}
+            {% bootstrap_grouped_form form %}
 
-                <div class="d-flex justify-content-center">
-                    {{ form.form_buttons }}
-                </div>
-            </form>
+            <div class="d-flex justify-content-center">
+                {{ form.form_buttons }}
+            </div>
+        </form>
     </div>
 </main>
 

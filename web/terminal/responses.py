@@ -26,6 +26,18 @@ SESSION_CLOSED = BaseApiCallReponse(
     status = 200 #
 ).to_json_response()
 
+SAVED_SESSION_CLOSED = BaseApiCallReponse(
+    success=True,
+    message='Saved Session deleted.',
+    status = 200 #
+).to_json_response()
+
+ALL_SESSION_CLOSED = BaseApiCallReponse(
+    success=True,
+    message='All Session deleted.',
+    status = 200 #
+).to_json_response()
+
 SESSION_CREATED = BaseApiCallReponse(
     success=True,
     message='Session created successfully.',

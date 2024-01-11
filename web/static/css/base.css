@@ -32,7 +32,7 @@ body {
 html,
 body {
   height: 100%;
-  text-shadow: 0 0 2px #ffffff50;
+  /* text-shadow: 0 0 2px #ffffff50; */
 }
 
 
@@ -81,6 +81,19 @@ body {
 .bg-slate-700:focus {
     background-color: var(--slate-500);
     color: var(--slate-300);
+}
+
+.bg-sky-800 {
+        background-color: var(--sky-800);
+        color: var(--slate-300);
+        transition: background-color .115s ease-in-out
+        color .115s ease-in-out;
+}
+
+.bg-sky-800:hover,
+.bg-sky-800:focus {
+        background-color: var(--sky-700);
+        color: var(--slate-200);
 }
 
 
