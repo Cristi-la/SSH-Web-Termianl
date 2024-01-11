@@ -217,6 +217,7 @@ class TermianlView(LoginRequiredMixin, TemplateView):
                 ip = save_session.ip,
                 save = False,
                 session_open = False,
+                save_session = save_session
             )
             session = self.object.sessions.get(user=user)
 
