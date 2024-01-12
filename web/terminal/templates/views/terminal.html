@@ -65,12 +65,46 @@
             addCreateTabPanels()
         })
 
-        document.getElementById('search-accordion').addEventListener('input', function(event) {
-            const filterValue = event.target.value.trim(); 
+        document.getElementById('search-accordion').addEventListener('input', function(e) {
+            const filterValue = e.target.value.trim(); 
             filterAccordionItems(filterValue);
         });
 
         prepareSavedSessions()
+
+
+        document.getElementById('joinSessionBtn').addEventListener('click', function(e) {
+            let input = document.getElementById('joinSessionInput')
+            const session_key = input.value
+            input.value = ''
+
+            if (!session_key) return;
+            
+            let result = joinSession(session_key)
+            if (!result) return;
+
+            let session = result.session
+
+            if (!session) return;
+            closeOffCanvas();
+            session_list.push(session)
+            addElementsForSession(session)
+        });
+
+        document.getElementById('shareSession').addEventListener('click', function(e) {
+            const session_id = this.getAttribute('data-session-id')
+            const result = shareSession(session_id)
+            let session = getSession(session_id, force=true)
+
+            if (session.session_open) {
+                const session_key = result.session_key
+                
+                console.error(session_key)
+                sessionSharingEnabled(session_key)
+            } else {
+                sessionSharingDisabled()
+            }
+        });
     });
 
 
@@ -83,6 +117,25 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog show">
+      <div class="modal-content bg-dark" style="min-height: 200px">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Session center</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="sessionkey">
+          Sharing key: <span id="sessionkey">...</span>
+        </div>
+        <div class="modal-footer text-center">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" id="shareSession" class="btn bg-sky-700" >Toggle Sharing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
 
 <div class="offcanvas offcanvas-end bg-dark" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
     <div class="offcanvas-header text-center" style="color: var(--slate-400); background-color: var(--slate-600);">
@@ -100,9 +153,20 @@
 
             <div class="accordion accordion-flush bg-dark" id="accordionFlush">
             </div>
-            
+
+            <hr />
+            <div class="text-center">
+                Use the form below to join open session:
+                <div class="input-group my-3">
+                    <input type="password" id="joinSessionInput" class="form-control" style="background-color: #3d444a !important" placeholder="Session key" aria-label="Session key" aria-describedby="button-addon4">
+                    <button class="btn btn-dark bg-sky-700" id="joinSessionBtn" type="button" id="button-addon4">Join</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+
+
 
 {% endblock %}

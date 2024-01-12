@@ -51,7 +51,7 @@ function addSavedSession(name, hostname, ip, pk, color, port, created_at) {
   accordionButton.innerHTML = `${colorfiedl}
     <div class="row text-truncate w-100">
       <div class="col fw-bold">${name}:</div>
-      <div class="col text-end px-4" style="font-family: consolas;">
+      <div class="col text-end px-4 text-truncate" style="font-family: consolas;">
         ${subfield}:${port}
       </div>
     </div>`;
@@ -165,46 +165,82 @@ function __generateMenuList(session_id, button){
     }
   });
 
-  return [
-    // {
-    //     label: '<img class="align-top px-1" src="/static/images/share.svg" />Share',
-    //     func: function(){
-            
-    //     },
-    // },
-    {
-        label: '<img class="align-top px-2" src="/static/images/edit.svg /">Rename',
+  let menu = [
+      {
+        label: '<img class="align-top px-2" src="/static/images/share.svg /">Share',
         func: function(){
-          __createInputField(button);
-        },
-    },
-    {
-        label: '<img class="align-top px-2" src="/static/images/palette.svg" />Change color<img class="align-top" style="padding-left: 2rem" src="/static/images/nav_right.svg" />',
-        
-        submenu: sublist
-    },
-    {
-        label: '<img class="align-top px-2" src="/static/images/close.svg" />Close',
-        func: function(){
-          deleteSession(session_id)
-          removeElementsForSession(session_id)
-        },
-    },
-    {
-        label: '<img class="align-top px-2" src="/static/images/close_all.svg" />Close All',
-        func: function(){
-          deleteAllSessions()
-          removeElementsForSessions(session_list)
-        },
-    }
-];
+          let modal = new bootstrap.Modal(document.getElementById('staticBackdrop'))
+          modal.show()
+          let toggleBtn = document.getElementById('shareSession')
 
+
+
+          if (session.session_open) {
+            const result  = shareSession(session_id, true)
+            sessionSharingEnabled(result.session_key)
+            
+          } else sessionSharingDisabled()
+
+          toggleBtn.setAttribute('data-session-id', session.pk)
+        },
+      },
+      {
+          label: '<img class="align-top px-2" src="/static/images/edit.svg /">Rename',
+          func: function(){
+            __createInputField(button);
+          },
+      },
+      {
+          label: '<img class="align-top px-2" src="/static/images/palette.svg" />Change color<img class="align-top" style="padding-left: 2rem" src="/static/images/nav_right.svg" />',
+          submenu: sublist
+      },
+      {
+          label: '<img class="align-top px-2" src="/static/images/close.svg" />Close',
+          func: function(){
+            deleteSession(session_id)
+            removeElementsForSession(session_id)
+          },
+      },
+      {
+          label: '<img class="align-top px-2" src="/static/images/close_all.svg" />Close All',
+          func: function(){
+            deleteAllSessions()
+            removeElementsForSessions(session_list)
+          },
+      }
+  ];
+
+  if (!session.is_master) menu.shift()
+  return  menu
+}
+
+
+function sessionSharingDisabled(){
+  let toggleBtn = document.getElementById('shareSession')
+  let sessionSahre = document.getElementById('sessionkey')
+  
+  toggleBtn.textContent = 'Enable sharing'
+  toggleBtn.classList.add('bg-sky-700');
+  toggleBtn.classList.remove('btn-danger');
+  sessionSahre.innerHTML = `Session sharing diabled!`
+
+}
+
+function sessionSharingEnabled(session_key){
+  let toggleBtn = document.getElementById('shareSession')
+  let sessionSahre = document.getElementById('sessionkey')
+
+  toggleBtn.textContent = 'Disbale sharing'
+  toggleBtn.classList.remove('bg-sky-700');
+  toggleBtn.classList.add('btn-danger');
+  sessionSahre.innerHTML = `Session sharing enabled! Session key: <code>${session_key}</code>`
+  
 }
 
 function __generateContextMenu(menuItems) {
   const menuContainer = document.getElementById('contextMenu');
   const div = document.createElement('div');
-  div.className = 'menu'
+  div.className = 'menu disable_selection'
 
   function createMenu(menu) {
     const ul = document.createElement('ul');
@@ -306,11 +342,10 @@ function __createInputField(button) {
   input.value = button.textContent;
   button.replaceWith(input);
   input.focus();
-  input.addEventListener('change', function () {
-    __replaceInputWithButton(input, button, session_id);
-  });
+  // input.addEventListener('change', function () {
+  //   __replaceInputWithButton(input, button, session_id);
+  // });
   input.addEventListener('blur', function () {
-    console.error('blurr')
     __replaceInputWithButton(input, button, session_id);
   });
 
@@ -322,9 +357,9 @@ function __createInputField(button) {
 }
 function __replaceInputWithButton(input, button, session_id) {
 
-  if (input.value) {
-    button.textContent = input.value;
+  if (input.value && button.textContent != input.value) {
     updateSession(session_id, input.value)
+    button.textContent = input.value;
   }
 
   input.replaceWith(button);

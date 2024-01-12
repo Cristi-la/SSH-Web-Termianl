@@ -14,7 +14,7 @@ class SessionPermissionMixin:
         user: AccountData = self.request.user
         session_obj: SSHData = super().get_object()
 
-        if request.method in "POST" and session_obj.session_open:
+        if request.method in "POST" and (session_obj.session_open or session_obj.session_master == request.user):
             return super().dispatch(request, *args, **kwargs)
 
         if request.method in ("DELETE", "PATCH", "GET"):

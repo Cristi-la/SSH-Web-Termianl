@@ -56,10 +56,12 @@ function getSessions(){
     }
 }
 
-function getSession(session_id) {
-    if (session_list){
-        let mysession = session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
-        if (mysession) return mysession;
+function getSession(session_id, force=false) {
+    if (!force){
+        if (session_list){
+            let mysession = session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
+            if (mysession) return mysession;
+        }
     }
 
     const method = 'POST';
@@ -67,10 +69,16 @@ function getSession(session_id) {
     const data = {sid: session_id};
     try {
         const result = fetchData(method, url, data);
-        let tmp_session_list = result.sessions
+        const tmp_session_list = result.sessions
+        const mysession = tmp_session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
 
-        let mysession = tmp_session_list.find((session) => parseInt(session.pk) === parseInt(session_id));
-        // session_list.push(mysession)
+        const indx = session_list.findIndex((session) => parseInt(session.pk) === parseInt(session_id));
+
+        if (indx == -1) {
+            session_list.push(mysession)
+        } else {
+            session_list[indx] = mysession
+        }
 
         return mysession;
     } catch (error) {
@@ -154,7 +162,7 @@ function deleteSaveSession(save_session_id) {
     try {
         return fetchData(method, url, data);
     } catch (error) {
-        console.error('Error in deleteSession:', error);
+        console.error('Error in deleteSaveSession:', error);
         return null;
     }
 }
@@ -193,3 +201,31 @@ function __update_session(session_id, data){
     }
 }
 
+
+function joinSession(session_key) {
+    const method = 'PUT';
+    const url = window.location.href;
+    const data = {session_key: session_key}
+
+    try {
+        return fetchData(method, url, data);
+    } catch (error) {
+        console.error('Error in joinSession:', error);
+        return null;
+    }
+}
+
+function shareSession(session_id, get=false){
+    const session = getSession(session_id)
+    const method = 'POST';
+    const url = session.url;
+    const data = {share: !session.session_open, get: get};
+
+    try {
+        const result = fetchData(method, url, data);
+        return result
+    } catch (error) {
+        console.error('Error in shareSession:', error);
+        return null;
+    }
+}
