@@ -3,15 +3,16 @@ from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, RedirectView
-from terminal.models import SSHData, NotesData, SessionsList, SavedHost
+from terminal.models import SSHData, NotesData, SessionsList, SavedHost, AccountData, BaseData
 from django.shortcuts import render, redirect
 from terminal.forms import SSHDataForm, ReconnectForm
 from django.urls import reverse, reverse_lazy
 from web.templates import TemplateSession, TemplateCreateSession
 from django.shortcuts import get_object_or_404
-from terminal.models import AccountData
 from terminal.responses import (
-    SESSION_CLOSED, SESSION_UPDATED, ALL_SESSION_CLOSED, SAVED_SESSION_CLOSED, NO_MANDATORY_PARAMS
+    SESSION_CLOSED, SESSION_UPDATED, ALL_SESSION_CLOSED, SAVED_SESSION_CLOSED, 
+    NO_MANDATORY_PARAMS, SESSION_SHARING_DISABLED, NO_SESSION_JOIN,
+    SESSION_ALREADY_JOINED
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
@@ -38,13 +39,29 @@ class SSHDetailView(TemplateSession):
 
     def post(self, request, *args, **kwargs): # DONE
         obj = self.get_object()
-        # Currently to join session: self.object need to have flag "session_open" set to True
-        SessionsList.join(
-            user=self.request.user,
-            data_obj = obj,
-            name = self.request.POST.get('name'),
-        )
-        return self.get(request, *args, **kwargs)
+        data = decoded_data(self.request.body)
+
+        # if 'session_key' in data:
+        #     session_key = data.get('session_key')
+        #     if session_key == obj.session_key:
+        #         SessionsList.join(
+        #             user=self.request.user,
+        #             data_obj = obj,
+        #             name = self.request.POST.get('name'),
+        #         )
+        #         return self.get(request, *args, **kwargs)
+        
+        if obj.session_master == request.user:
+            if data.get('get', False):
+                return JsonResponse({'session_key': obj.session_key}, status=200)
+
+            if data.get('share', False):
+                return JsonResponse({'session_key':  obj.setup_sharing()}, status=200)
+                
+            obj.stop_sharing()
+            return SESSION_SHARING_DISABLED
+        
+
 
     def get(self, request, *args, **kwargs): # DONE
         data_obj = self.get_object()
@@ -94,7 +111,6 @@ class SSHCreateView(TemplateCreateSession): #DONE
 
     def get(self, request, *args, **kwargs):
         form = self.get_form()
-        print('AAAAAA')
         return render(
             request, 
             self.template_name, 
@@ -152,19 +168,7 @@ class TermianlView(LoginRequiredMixin, TemplateView):
         sessions_list['sid'] = sid
 
         for session in sessions:
-            content_object = session.content_object
-            sessions_list['sessions'].append({
-                'name': session.name,
-                'color': session.color,
-                'pk': session.pk,
-                'object_id': session.object_id,
-                'content_type': content_object.name,
-                'is_master': content_object.session_master == self.request.user,
-                'session_open': content_object.session_open,
-                'session_open': session.sharing_enabled,
-                'url': content_object.url,
-                'create_url': content_object.create_url,
-            })
+            sessions_list['sessions'].append(session.get_session_dict(request.user))
         
         return JsonResponse(sessions_list, status=200)
     
@@ -191,7 +195,7 @@ class TermianlView(LoginRequiredMixin, TemplateView):
         samples = {
             'samples': SavedHost.COLOR_PALETTE,
             'saved_sessions': list(SavedHost.objects.filter(user=self.request.user).values(
-                'name', 'hostname', 'ip', 'color', 'pk', 'port', 'created_at'
+                'name', 'hostname', 'ip', 'color', 'pk', 'port', 'created_at','private_key'
             ))
         }
 
@@ -201,7 +205,24 @@ class TermianlView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         data = decoded_data(self.request.body)
 
-        if 'save_session' in data and data.get('save_session'):
+        if 'session_key' in data:
+            session_key = data.get('session_key')
+
+            other_session =  SessionsList.get_session_from_key(session_key)
+            if other_session:
+                session, created = SessionsList.join(
+                    user=self.request.user,
+                    data_obj = other_session.content_object,
+                    name =  other_session.content_object.name,
+                )
+
+                if not created:
+                    return SESSION_ALREADY_JOINED
+
+                return JsonResponse({'session':  session.get_session_dict(request.user)}, status=200)
+
+            return NO_SESSION_JOIN
+        elif 'save_session' in data and data.get('save_session'):
             save_session_id = data.get('save_session')
             save_session = SavedHost.objects.get(user=user, pk=save_session_id) 
 

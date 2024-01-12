@@ -12,6 +12,8 @@ from terminal.ssh import SSHModule
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from functools import wraps
+import secrets
+from django.db.models import Q
 
 def strip_object(data: dict):
     return  {k: str(v).strip() if v else None for k, v in data.items()}
@@ -28,12 +30,13 @@ def strip_args(*args_to_strip: list[str]):
             for key in parsed_kwargs:
                 kwargs.pop(key)
 
+            print(strip_object(parsed_kwargs).get('private_key'))
+
             return func(
                 *args,
                 **kwargs,
                 **strip_object(parsed_kwargs)
             )
-
         return wrapper
     return decorator
 
@@ -140,6 +143,7 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
     session_lock = models.BooleanField(default=True, help_text='This flags informs if other session users (except master) can iteract with terminal')
     session_open = models.BooleanField(default=False, help_text='This flags informs if other users can join this session')
     sessions = GenericRelation('SessionsList', related_query_name='session')
+    session_key = models.CharField(default=None, max_length=500, blank=True, null=True, help_text='This key is use in session sharing')
 
     class Meta:
         abstract = True  # This makes BaseData an abstract model, preventing database table creation.
@@ -178,8 +182,19 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
             setattr(self, key, value)
         self.save()
 
-       
+    def setup_sharing(self):
+        self.session_open = True 
+        self.session_key = secrets.token_hex(64)
+        self.save()
 
+        return self.session_key
+    
+    def stop_sharing(self):
+        self.session_open = False 
+        self.session_key = None
+        self.save()
+
+    
 
 class NotesData(BaseData):
     TASK_READER = False
@@ -357,6 +372,10 @@ class SessionsList(models.Model):
     object_id = models.PositiveIntegerField(null=False)
     content_object = GenericForeignKey('content_type', 'object_id')
 
+
+    # ssh_data_relation = GenericRelation(SSHData)
+    # notes_data_relation = GenericRelation(NotesData)
+
     class Meta:
         # To session form the same user to Session Data can not exist
         unique_together = ['user', 'content_type', 'object_id']
@@ -380,7 +399,7 @@ class SessionsList(models.Model):
     
     @classmethod
     def join(cls, user, data_obj, name):
-        session, _ = cls.objects.get_or_create(
+        session, created = cls.objects.get_or_create(
             user = user,
             content_type=ContentType.objects.get_for_model(data_obj),
             object_id=data_obj.id
@@ -389,7 +408,7 @@ class SessionsList(models.Model):
         session.name = name if name else data_obj.name
         session.save()
 
-        return session
+        return session, created
 
     def close(self):
         self.delete()
@@ -398,3 +417,24 @@ class SessionsList(models.Model):
         for key, value in data_dict.items():
             setattr(self, key, value)
         self.save()
+
+    @staticmethod
+    def get_session_from_key(sesssion_key):
+        sessions = SessionsList.objects.all()
+        for session in sessions:
+            content = session.content_object
+            if content.session_open and content.session_key == sesssion_key:
+                return session
+            
+    def get_session_dict(self, user):
+        return {
+            'name': self.name,
+            'color': self.color,
+            'pk': self.pk,
+            'object_id': self.object_id,
+            'content_type': self.content_object.name,
+            'is_master': self.content_object.session_master == user,
+            'session_open': self.content_object.session_open,
+            'url': self.content_object.url,
+            'create_url': self.content_object.create_url,
+        }

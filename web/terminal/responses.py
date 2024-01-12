@@ -26,6 +26,12 @@ SESSION_CLOSED = BaseApiCallReponse(
     status = 200 #
 ).to_json_response()
 
+SESSION_SHARING_DISABLED = BaseApiCallReponse(
+    success=True,
+    message='Session shared disabled',
+    status = 200 #
+).to_json_response()
+
 SAVED_SESSION_CLOSED = BaseApiCallReponse(
     success=True,
     message='Saved Session deleted.',
@@ -61,4 +67,18 @@ SESSION_IS_NOT_SHARED = BaseApiCallReponse(
     message='Bad request. Session is not shared',
     status = 403 # HTTP status code for Bad Request
 ).to_json_response()
+
+NO_SESSION_JOIN = BaseApiCallReponse(
+    success=False,
+    message='No sesssion found! Please try agin.',
+    status = 403 # HTTP status code for Bad Request
+).to_json_response()
+
+
+SESSION_ALREADY_JOINED = BaseApiCallReponse(
+    success=False,
+    message='You join this session already',
+    status = 403 # HTTP status code for Bad Request
+).to_json_response()
+
 

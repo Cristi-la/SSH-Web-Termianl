@@ -97,6 +97,21 @@ body {
 }
 
 
+.bg-sky-700 {
+        background-color: var(--sky-700);
+        color: var(--slate-300);
+        transition: background-color .115s ease-in-out
+        color .115s ease-in-out;
+}
+
+.bg-sky-700:hover,
+.bg-sky-700:focus {
+        background-color: var(--sky-600);
+        color: var(--slate-200);
+}
+
+
+
 .disable_selection {
   webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE 10 and IE 11 */

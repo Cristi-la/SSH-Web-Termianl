@@ -45,7 +45,7 @@
   background-color: var(--slate-300);
   color: var(--slate-700);
   font-weight: bold;
-  border: 2px solid var(--sky-900);
+  border: 1px solid var(--sky-900);
 }
 
 /* ADD button */
@@ -177,4 +177,15 @@
     padding: .6rem .8rem;
     background-color: #515457 !important;
     color: var(--slate-400) !important;
+  }
+
+  /* modal */
+  .modal-content {
+    color: var(--slate-400);
+  }
+  .modal-content .modal-header {
+    border-bottom: var(--bs-modal-header-border-width) solid var(--slate-500);
+  }
+  .modal-content .modal-footer {
+    border-top: var(--bs-modal-footer-border-width) solid var(--slate-500);
   }
