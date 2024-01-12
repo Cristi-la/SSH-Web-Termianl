@@ -4,6 +4,7 @@ from paramiko.ssh_exception import AuthenticationException, SSHException, BadHos
     NoValidConnectionsError, PasswordRequiredException
 import asyncio
 from io import StringIO
+from terminal.errors import ReconnectRequired
 
 
 class SSHModule:
@@ -22,12 +23,12 @@ class SSHModule:
             raise
         except NoValidConnectionsError:
             raise
-        except PasswordRequiredException:
-            raise
-        except AuthenticationException:
-            raise
-        except SSHException:
-            raise
+        except PasswordRequiredException as e:
+            raise ReconnectRequired(message=e)
+        except AuthenticationException as e:
+            raise ReconnectRequired(message=e)
+        except SSHException as e:
+            raise ReconnectRequired(message=e)
         except socket.error:
             raise
         except Exception:

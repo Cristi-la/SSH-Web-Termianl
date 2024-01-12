@@ -66,7 +66,7 @@ function handleFormSubmit(event, terminalManager) {
     let data = {};
     formData.forEach((value, key) => data[key] = value);
 
-    let json = JSON.stringify({'action': 'reconnect', 'data': data});
+    let json = JSON.stringify({'action': 'reconnect', 'type': 'form', 'data': data});
     terminalManager.sendData(json);
 
     event.target.reset();
@@ -88,13 +88,11 @@ function clearFormOnModalClose(modalId, formSelector) {
     }
 }
 
-function createReconnectButton() {
+function createReconnectButton(savedSession, terminalManager) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn btn-primary center-button';
     button.id = 'ReconnectButton';
-    button.setAttribute('data-bs-toggle', 'modal');
-    button.setAttribute('data-bs-target', '#ReconnectModal');
 
     const img = document.createElement('img');
     img.setAttribute('src', '/static/images/reconnect.svg');
@@ -105,13 +103,24 @@ function createReconnectButton() {
 
     button.appendChild(img);
 
+    if (savedSession === false) {
+        button.setAttribute('data-bs-toggle', 'modal');
+        button.setAttribute('data-bs-target', '#ReconnectModal');
+    } else if (savedSession === true) {
+        button.addEventListener('click', function() {
+        let json = JSON.stringify({'action': 'reconnect', 'type': 'saved'});
+        terminalManager.sendData(json);
+    });
+    }
+
     const container = document.getElementById('container');
     container.appendChild(button);
 }
 
 function removeReconnectButton() {
-    const button = document.getElementById('ReconnectButton');
-    if (button) {
-        button.remove();
+    const reconnectButton = document.getElementById('ReconnectButton');
+
+    if (reconnectButton) {
+        reconnectButton.remove();
     }
 }

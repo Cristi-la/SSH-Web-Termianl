@@ -94,7 +94,6 @@ class SSHCreateView(TemplateCreateSession): #DONE
 
     def get(self, request, *args, **kwargs):
         form = self.get_form()
-        print('AAAAAA')
         return render(
             request, 
             self.template_name, 

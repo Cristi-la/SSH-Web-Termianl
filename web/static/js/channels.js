@@ -19,14 +19,19 @@ class WebSocketManager {
             let data = JSON.parse(e.data);
 
             if (data.message) {
-                if (data.message.type === 'error') {
-                    this.terminal.writeMessage(data.message.content + '\n\r');
-                } else if (data.message.type === 'info') {
-                    this.terminal.writeMessage(data.message.content);
-                } else if (data.message.type === 'action' && data.message.content === 'require_reconnect') {
-                    createReconnectButton();
-                }  else if (data.message.type === 'action' && data.message.content === 'reconnect_successful') {
-                    removeReconnectButton();
+                switch (data.message.type) {
+                    case 'error':
+                        this.terminal.writeMessage(data.message.content + '\n\r');
+                        break
+                    case 'info':
+                        this.terminal.writeMessage(data.message.content);
+                        break
+                    case 'action':
+                        if (data.message.content.type === 'require_reconnect') {
+                            createReconnectButton(data.message.content.session_saved, this.terminal)
+                        } else if (data.message.content.type === 'reconnect_successful') {
+                            removeReconnectButton();
+                        }
                 }
             }
         };

@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from terminal.models import SessionsList, BaseData
 from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async
+from terminal.errors import ReconnectRequired
 
 class SessionCosumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -34,9 +35,12 @@ class SessionCosumer(AsyncWebsocketConsumer):
             await self.send_group_message_inclusive(type='info', message=await data_obj.get_content())
             try:
                 await data_obj.connect()
+            except ReconnectRequired as e:
+                await self.send_group_message_inclusive(e)
+                await self.send_group_message_inclusive(type='action', message={'type': 'require_reconnect',
+                                                                                'session_saved': e.session_saved})
             except Exception as e:
                 await self.send_group_message_inclusive(e)
-                await self.send_group_message_inclusive(type='action', message='require_reconnect')
 
             self.start_read()
 
@@ -87,26 +91,30 @@ class SessionCosumer(AsyncWebsocketConsumer):
                     self.start_read()
 
             elif message.get('action') == 'reconnect':
-                data = message.get('data')
-                obj, data_obj = await self.__get_session()
-                data = {k: str(v).strip() if v else None for k, v in data.items()}
-                await sync_to_async(
-                    lambda: data_obj.cache_credentials(
-                        cache_key=data_obj.id,
-                        username=data.get('username'),
-                        password=data.get('password'),
-                        private_key=data.get('private_key'),
-                        passphrase=data.get('passphrase')
-                    )
-                )()
+                if message.get('type') == 'form':
+                    data = message.get('data')
+                    obj, data_obj = await self.__get_session()
+                    data = {k: str(v).strip() if v else None for k, v in data.items()}
+                    await sync_to_async(
+                        lambda: data_obj.cache_credentials(
+                            cache_key=data_obj.id,
+                            username=data.get('username'),
+                            password=data.get('password'),
+                            private_key=data.get('private_key'),
+                            passphrase=data.get('passphrase')
+                        )
+                    )()
 
                 try:
                     await data_obj.connect()
+                except ReconnectRequired as e:
+                    await self.send_group_message_inclusive(e)
+                    await self.send_group_message_inclusive(type='action', message={'type': 'require_reconnect',
+                                                                                    'session_saved': e.session_saved})
                 except Exception as e:
                     await self.send_group_message_inclusive(e)
-                    await self.send_group_message_inclusive(type='action', message='require_reconnect')
 
-                await self.send_group_message_inclusive(type='action', message='reconnect_successful')
+                await self.send_group_message_inclusive(type='action', message={'type': 'reconnect_successful'})
                 self.start_read()
 
     def start_read(self):

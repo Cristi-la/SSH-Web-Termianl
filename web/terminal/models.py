@@ -13,6 +13,7 @@ from django.core.cache import cache
 from asgiref.sync import sync_to_async
 from asyncio import create_task
 from functools import wraps
+from terminal.errors import ReconnectRequired
 
 def strip_object(data: dict):
     return  {k: str(v).strip() if v else None for k, v in data.items()}
@@ -284,13 +285,16 @@ class SSHData(BaseData):
                 passphrase=passphrase,
                 port=port
             )
+        except ReconnectRequired as e:
+            session_saved = await self.__check_save_session_exists()
+            raise ReconnectRequired(message=e, session_saved=session_saved)
         except Exception:
             raise
 
     async def disconnect(self):
-        updated_buffer = self.__get_buffer(self.id) + '\n\r'*5
+        updated_buffer = self.__get_buffer(self.id)
         self.__set_buffer(self.id, updated_buffer)
-        await self.flush_buffer()
+        await self.__flush_buffer()
         await SSHModule.disconnect(await self.__get_session_id())
 
     @sync_to_async
@@ -321,8 +325,11 @@ class SSHData(BaseData):
     async def get_content(self):
         return self.content
 
-    async def flush_buffer(self):
+    async def __flush_buffer(self):
         await self.__update_content(self.id)
+
+    async def __check_save_session_exists(self):
+        return bool(self.save_session)
 
     @classmethod
     def cache_credentials(cls, username, password, private_key, passphrase, cache_key):
