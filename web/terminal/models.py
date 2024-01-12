@@ -11,6 +11,7 @@ from django.urls import reverse
 from terminal.ssh import SSHModule
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
+from asyncio import create_task
 from functools import wraps
 import secrets
 from django.db.models import Q
@@ -26,7 +27,7 @@ def strip_args(*args_to_strip: list[str]):
             for key, value in kwargs.items():
                 if key in args_to_strip:
                     parsed_kwargs[key] = value
-            
+
             for key in parsed_kwargs:
                 kwargs.pop(key)
 
@@ -213,11 +214,15 @@ class NotesData(BaseData):
 
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
+    BUFFER_SIZE_LIMIT = 65536
+
+    _buffers = {}
 
     ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the host.')
     hostname = models.CharField(max_length=255, blank=True, null=True, help_text='The hostname of the host.')
     port = models.PositiveIntegerField(default=22, blank=True, null=True, help_text='The port number for accessing the host.')
     save_session = models.ForeignKey(SavedHost, on_delete=models.SET_NULL, related_name='sshdate', blank=True, null=True, default=None, help_text='Saved Host data reference')
+    content = models.TextField(blank=True, null=False, default='', help_text='All terminal content for this ssh session')
 
     @property
     def create_url(self):
@@ -236,7 +241,17 @@ class SSHData(BaseData):
         self.delete()
 
     async def read(self):
-        return await SSHModule.read(await self.__get_session_id())
+        data = await SSHModule.read(await self.__get_session_id())
+
+        if data is not None and data != '':
+            updated_buffer = self.__get_buffer(self.id) + data
+            self.__set_buffer(self.id, updated_buffer)
+
+            if len(updated_buffer) >= self.BUFFER_SIZE_LIMIT:
+                await self.__update_content(self.id)
+
+
+        return data
 
     async def send(self, data):
         try:
@@ -255,7 +270,7 @@ class SSHData(BaseData):
         await self.check_cache_and_update_flag()
 
         save_session = await self.get_save_session()
-        
+
         if save_session:
             username = save_session.username
             password = save_session.password
@@ -272,7 +287,7 @@ class SSHData(BaseData):
             passphrase = cache_credentials.get('passphrase')
             hostname = self.ip if self.hostname is None else self.hostname
             port = self.port
-        
+
 
         try:
             await SSHModule.connect_or_create_instance(
@@ -288,6 +303,9 @@ class SSHData(BaseData):
             raise
 
     async def disconnect(self):
+        updated_buffer = self.__get_buffer(self.id) + '\n\r'*5
+        self.__set_buffer(self.id, updated_buffer)
+        await self.flush_buffer()
         await SSHModule.disconnect(await self.__get_session_id())
 
     @sync_to_async
@@ -297,6 +315,29 @@ class SSHData(BaseData):
     async def check_cache_and_update_flag(self):
         if cache.get(await self.__get_session_id()) is None:
             self.CACHED_CREDENTIALS = False
+
+    @classmethod
+    async def __update_content(cls, instance_id):
+        buffer_content = cls.__get_buffer(instance_id)
+        if buffer_content:
+            instance = await sync_to_async(cls.objects.get)(id=instance_id)
+            instance.content += buffer_content
+            await sync_to_async(instance.save)()
+            cls.__set_buffer(instance_id, '')
+
+    @classmethod
+    def __get_buffer(cls, instance_id):
+        return cls._buffers.setdefault(instance_id, '')
+
+    @classmethod
+    def __set_buffer(cls, instance_id, data):
+        cls._buffers[instance_id] = data
+
+    async def get_content(self):
+        return self.content
+
+    async def flush_buffer(self):
+        await self.__update_content(self.id)
 
     @classmethod
     def cache_credentials(cls, username, password, private_key, passphrase, cache_key):

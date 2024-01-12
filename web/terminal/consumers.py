@@ -31,6 +31,7 @@ class SessionCosumer(AsyncWebsocketConsumer):
         await self.accept()
 
         if obj.content_type.model == 'sshdata':
+            await self.send_group_message_inclusive(type='info', message=await data_obj.get_content())
             try:
                 await data_obj.connect()
             except Exception as e:
@@ -88,7 +89,7 @@ class SessionCosumer(AsyncWebsocketConsumer):
             elif message.get('action') == 'reconnect':
                 data = message.get('data')
                 obj, data_obj = await self.__get_session()
-
+                data = {k: str(v).strip() if v else None for k, v in data.items()}
                 await sync_to_async(
                     lambda: data_obj.cache_credentials(
                         cache_key=data_obj.id,
