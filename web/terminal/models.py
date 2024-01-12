@@ -250,7 +250,6 @@ class SSHData(BaseData):
             if len(updated_buffer) >= self.BUFFER_SIZE_LIMIT:
                 await self.__update_content(self.id)
 
-
         return data
 
     async def send(self, data):
@@ -270,6 +269,8 @@ class SSHData(BaseData):
         await self.check_cache_and_update_flag()
 
         save_session = await self.get_save_session()
+        hostname = self.ip if self.hostname is None else self.hostname
+        port = self.port
 
         if save_session:
             username = save_session.username
@@ -285,9 +286,6 @@ class SSHData(BaseData):
             password = cache_credentials.get('password')
             private_key = cache_credentials.get('private_key')
             passphrase = cache_credentials.get('passphrase')
-            hostname = self.ip if self.hostname is None else self.hostname
-            port = self.port
-
 
         try:
             await SSHModule.connect_or_create_instance(
