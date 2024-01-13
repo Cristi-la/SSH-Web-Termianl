@@ -12,6 +12,7 @@ class WebSocketManager {
         this.websocket.onopen = () => {
             if (this.terminal) {
                 this.terminal.setWebSocket(this.websocket);
+                this.terminal.performResize()
             }
         };
 

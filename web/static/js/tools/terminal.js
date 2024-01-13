@@ -1,7 +1,7 @@
 class TerminalManager {
     constructor() {
         this.term = null
-        this.style = {width: null, height: null};
+        this.fitAddon = null
     }
 
     createTerminal() {
@@ -16,8 +16,8 @@ class TerminalManager {
 
         let term = new window.Terminal(termOptions)
 
-        term.fitAddon = new window.FitAddon.FitAddon()
-        term.loadAddon(term.fitAddon)
+        this.fitAddon = new window.FitAddon.FitAddon()
+        term.loadAddon(this.fitAddon)
 
         this.term = term;
     }
@@ -26,7 +26,7 @@ class TerminalManager {
         if (this.term && container) {
             this.term.open(container)
             document.querySelector('#terminal .terminal').classList.toggle('fullscreen');
-            this.term.fitAddon.fit();
+            this.fitAddon.fit();
             this.term.focus()
             this.setupResizeListener();
         }
@@ -51,11 +51,36 @@ class TerminalManager {
     }
 
     setupResizeListener() {
-        window.addEventListener('resize', () => {
-            if (this.term && this.term.fitAddon) {
-                this.term.fitAddon.fit();
-            }
-        });
+        let resizeTimer;
+        const resizeFunction = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (this.term && this.fitAddon) {
+                    this.performResize();
+                }
+            }, 300);
+        };
+
+        window.addEventListener('resize', resizeFunction);
+        window.addEventListener('beforeunload', resizeFunction);
+    }
+
+    performResize() {
+        if (this.term && this.fitAddon) {
+            this.delTermSize()
+
+            this.fitAddon.fit();
+
+            const NewCols = this.term.cols;
+            const NewRows = this.term.rows;
+            this.sendData(JSON.stringify({'action': 'resize', 'type': 'new', 'data': {'cols': NewCols, 'rows': NewRows}}));
+        }
+    }
+
+    delTermSize() {
+        const Cols = this.term.cols;
+        const Rows = this.term.rows;
+        this.sendData(JSON.stringify({'action': 'resize', 'type': 'del', 'data': {'cols': Cols, 'rows': Rows}}));
     }
 }
 

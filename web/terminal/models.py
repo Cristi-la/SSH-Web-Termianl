@@ -11,7 +11,6 @@ from django.urls import reverse
 from terminal.ssh import SSHModule
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
-from asyncio import create_task
 from functools import wraps
 from terminal.errors import ReconnectRequired
 import secrets
@@ -215,6 +214,7 @@ class NotesData(BaseData):
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
     BUFFER_SIZE_LIMIT = 65536
+    TERM_MIN_WIDTH, TERM_MIN_HEIGHT = 20, 12
 
     _buffers = {}
 
@@ -308,6 +308,17 @@ class SSHData(BaseData):
         self.__set_buffer(self.id, updated_buffer)
         await self.__flush_buffer()
         await SSHModule.disconnect(await self.__get_session_id())
+
+    async def resize_terminal(self):
+        await SSHModule.resize_terminals_in_group(await self.__get_session_id(),
+                                                  self.TERM_MIN_WIDTH, self.TERM_MIN_HEIGHT)
+
+    async def set_terminal_size(self, term_width, term_height):
+        await SSHModule.add_terminals_in_group(await self.__get_session_id(), term_width, term_height)
+
+    async def del_terminal_size(self, term_width, term_height):
+        await SSHModule.del_terminals_in_group(await self.__get_session_id(), term_width, term_height)
+
 
     @sync_to_async
     def __get_session_id(self):

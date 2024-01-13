@@ -79,43 +79,60 @@ class SessionCosumer(AsyncWebsocketConsumer):
         obj, data_obj = await self.__get_session()
 
         if obj.content_type.model == 'sshdata':
-            if message.get('action') == 'execute':
-                data = message.get('data')
-                if data:
-                    obj, data_obj = await self.__get_session()
+            match message.get('action'):
+                case 'execute':
+                    data = message.get('data')
+                    if data:
+                        obj, data_obj = await self.__get_session()
+
+                        try:
+                            await data_obj.send(data)
+                        except Exception as e:
+                            await self.send_group_message_inclusive(e)
+                        self.start_read()
+
+                case 'reconnect':
+                    if message.get('type') == 'form':
+                        data = message.get('data')
+                        obj, data_obj = await self.__get_session()
+                        data = {k: str(v).strip() if v else None for k, v in data.items()}
+                        await sync_to_async(
+                            lambda: data_obj.cache_credentials(
+                                cache_key=data_obj.id,
+                                username=data.get('username'),
+                                password=data.get('password'),
+                                private_key=data.get('private_key'),
+                                passphrase=data.get('passphrase')
+                            )
+                        )()
 
                     try:
-                        await data_obj.send(data)
+                        await data_obj.connect()
+                    except ReconnectRequired as e:
+                        await self.send_group_message_inclusive(e)
+                        await self.send_group_message_inclusive(type='action', message={'type': 'require_reconnect',
+                                                                                        'session_saved': e.session_saved})
                     except Exception as e:
                         await self.send_group_message_inclusive(e)
+
+                    await self.send_group_message_inclusive(type='action', message={'type': 'reconnect_successful'})
                     self.start_read()
 
-            elif message.get('action') == 'reconnect':
-                if message.get('type') == 'form':
-                    data = message.get('data')
-                    obj, data_obj = await self.__get_session()
-                    data = {k: str(v).strip() if v else None for k, v in data.items()}
-                    await sync_to_async(
-                        lambda: data_obj.cache_credentials(
-                            cache_key=data_obj.id,
-                            username=data.get('username'),
-                            password=data.get('password'),
-                            private_key=data.get('private_key'),
-                            passphrase=data.get('passphrase')
-                        )
-                    )()
+                case 'resize':
+                    if message.get('type') == 'del':
+                        size = message.get('data')
+                        obj, data_obj = await self.__get_session()
+                        await data_obj.del_terminal_size(size.get('cols'), size.get('rows'))
 
-                try:
-                    await data_obj.connect()
-                except ReconnectRequired as e:
-                    await self.send_group_message_inclusive(e)
-                    await self.send_group_message_inclusive(type='action', message={'type': 'require_reconnect',
-                                                                                    'session_saved': e.session_saved})
-                except Exception as e:
-                    await self.send_group_message_inclusive(e)
+                    elif message.get('type') == 'new':
+                        size = message.get('data')
+                        obj, data_obj = await self.__get_session()
+                        await data_obj.set_terminal_size(size.get('cols'), size.get('rows'))
+                        await data_obj.resize_terminal()
 
-                await self.send_group_message_inclusive(type='action', message={'type': 'reconnect_successful'})
-                self.start_read()
+
+
+
 
     def start_read(self):
         if self.read_task is None or self.read_task.done():
