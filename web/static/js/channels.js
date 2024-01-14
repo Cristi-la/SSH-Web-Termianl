@@ -32,6 +32,10 @@ class WebSocketManager {
                             createReconnectButton(data.message.content.session_saved, this.terminal)
                         } else if (data.message.content.type === 'reconnect_successful') {
                             removeReconnectButton();
+                        } else if (data.message.content.type === 'del_tab') {
+                            if (window.parent && typeof window.parent.removeElementsForSession === 'function') {
+                                window.parent.removeElementsForSession(data.message.content.session_id)
+                            }
                         }
                 }
             }
