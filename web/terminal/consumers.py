@@ -31,6 +31,9 @@ class SessionCosumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.ssh_session_id, self.channel_name)
         await self.accept()
 
+        if obj is None or data_obj is None:
+            return
+
         if obj.content_type.model == 'sshdata':
             await self.send_group_message_inclusive(type='action', message={'type': 'load_content',
                                                                             'data': await data_obj.get_content()})
@@ -78,6 +81,9 @@ class SessionCosumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         message = json.loads(text_data)
         obj, data_obj = await self.__get_session()
+
+        if obj is None or data_obj is None:
+            return
 
         if obj.content_type.model == 'sshdata':
             match message.get('action'):
@@ -143,10 +149,13 @@ class SessionCosumer(AsyncWebsocketConsumer):
         no_data_duration = 0
 
         while True:
-            if no_data_duration >= 5:
-                break
+            if no_data_duration >= 30:
+                return
 
             obj, data_obj = await self.__get_session()
+
+            if obj is None or data_obj is None:
+                return
 
             if obj.content_type.model == 'sshdata':
                 data = await data_obj.read()
