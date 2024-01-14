@@ -11,8 +11,8 @@ from django.urls import reverse
 from terminal.ssh import SSHModule
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
-from asyncio import create_task
 from functools import wraps
+from terminal.errors import ReconnectRequired
 import secrets
 from web.settings import COLOR_PALETTE
 
@@ -31,13 +31,12 @@ def strip_args(*args_to_strip: list[str]):
             for key in parsed_kwargs:
                 kwargs.pop(key)
 
-            print(strip_object(parsed_kwargs).get('private_key'))
-
             return func(
                 *args,
                 **kwargs,
                 **strip_object(parsed_kwargs)
             )
+
         return wrapper
     return decorator
 
@@ -197,14 +196,14 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
         return data_obj, session
 
     def setup_sharing(self):
-        self.session_open = True 
+        self.session_open = True
         self.session_key = secrets.token_hex(64)
         self.save()
 
         return self.session_key
-    
+
     def stop_sharing(self):
-        self.session_open = False 
+        self.session_open = False
         self.session_key = None
         self.save()
 
@@ -234,6 +233,7 @@ class NotesData(BaseData):
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
     BUFFER_SIZE_LIMIT = 65536
+    TERM_MIN_WIDTH, TERM_MIN_HEIGHT = 20, 12
 
     _buffers = {}
 
@@ -270,7 +270,6 @@ class SSHData(BaseData):
             if len(updated_buffer) >= self.BUFFER_SIZE_LIMIT:
                 await self.__update_content(self.id)
 
-
         return data
 
     async def send(self, data):
@@ -290,6 +289,8 @@ class SSHData(BaseData):
         await self.check_cache_and_update_flag()
 
         save_session = await self.get_save_session()
+        hostname = self.ip if self.hostname is None else self.hostname
+        port = self.port
 
         if save_session:
             username = save_session.username
@@ -305,9 +306,6 @@ class SSHData(BaseData):
             password = cache_credentials.get('password')
             private_key = cache_credentials.get('private_key')
             passphrase = cache_credentials.get('passphrase')
-            hostname = self.ip if self.hostname is None else self.hostname
-            port = self.port
-
 
         try:
             await SSHModule.connect_or_create_instance(
@@ -319,14 +317,28 @@ class SSHData(BaseData):
                 passphrase=passphrase,
                 port=port
             )
+        except ReconnectRequired as e:
+            session_saved = await self.__check_save_session_exists()
+            raise ReconnectRequired(message=e, session_saved=session_saved)
         except Exception:
             raise
 
     async def disconnect(self):
-        updated_buffer = self.__get_buffer(self.id) + '\n\r'*5
+        updated_buffer = self.__get_buffer(self.id)
         self.__set_buffer(self.id, updated_buffer)
-        await self.flush_buffer()
+        await self.__flush_buffer()
         await SSHModule.disconnect(await self.__get_session_id())
+
+    async def resize_terminal(self):
+        await SSHModule.resize_terminals_in_group(await self.__get_session_id(),
+                                                  self.TERM_MIN_WIDTH, self.TERM_MIN_HEIGHT)
+
+    async def set_terminal_size(self, term_width, term_height):
+        await SSHModule.add_terminals_in_group(await self.__get_session_id(), term_width, term_height)
+
+    async def del_terminal_size(self, term_width, term_height):
+        await SSHModule.del_terminals_in_group(await self.__get_session_id(), term_width, term_height)
+
 
     @sync_to_async
     def __get_session_id(self):
@@ -356,8 +368,11 @@ class SSHData(BaseData):
     async def get_content(self):
         return self.content
 
-    async def flush_buffer(self):
+    async def __flush_buffer(self):
         await self.__update_content(self.id)
+
+    async def __check_save_session_exists(self):
+        return bool(self.save_session)
 
     @classmethod
     def cache_credentials(cls, username, password, private_key, passphrase, cache_key):
@@ -482,7 +497,7 @@ class SessionsList(models.Model):
             content = session.content_object
             if content.session_open and content.session_key == sesssion_key:
                 return session
-            
+
     def get_session_dict(self, user):
         return {
             'name': self.name,
