@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% comment %} Meta tags {% endcomment %}
+{% block meta_tags %}
+
+    <script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
+{% endblock %}
+
+
+{% comment %} 
+UWAGA MATEUSZ!!!!!!!!!!!!!!!!!!!!!!!!
+od teraz te zmienne ustawiają się same! nie musisz tego robić.... 
+var UserobjectPk = {{ user_object.pk }};
+var objectPk = {{ object.pk }};
+
+    Odwołuj się do nich: window.UserobjectPk
+
+{% endcomment %}
+
+{% block content %}
+    <main>
+        <div id="container">
+            NOTATKA
+            <textarea></textarea>
+        </div>
+    </main>
+{% endblock %}
+
+
+
+

@@ -32,16 +32,16 @@
 
 <script>
     window.addEventListener("load", (e) => {
-        
         document.getElementById('close').addEventListener('click', (e) => {
             id = e.target.getAttribute('data-session-id')
 
             if (id) emitCloseEvent(id)
-        
         });
-
-
     });
 </script>
 
+
+
 {% endblock %}
+
+

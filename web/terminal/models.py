@@ -14,7 +14,7 @@ from asgiref.sync import sync_to_async
 from asyncio import create_task
 from functools import wraps
 import secrets
-from django.db.models import Q
+from web.settings import COLOR_PALETTE
 
 def strip_object(data: dict):
     return  {k: str(v).strip() if v else None for k, v in data.items()}
@@ -78,15 +78,7 @@ class AccountData(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
-class SavedHost(models.Model):
-    COLOR_PALETTE = [
-        ("#BA1C1C", "Correl Red", ),
-        ("#2E9329", "Forest Green", ),
-        ("#248BC2", "Deep Blue", ),
-        ("#BD2DB6", "Steel Pink", ),
-        ("#E0A61E", "Harvest Gold", ),
-    ]
-     
+class SavedHost(models.Model):     
     name = models.CharField(max_length=100, default='Session', help_text='Default name of the tab in fronend.')
     user = models.ForeignKey('AccountData', on_delete=models.CASCADE, related_name='saved_hosts', default=None, help_text='The user associated with the saved host.')
     ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the saved host.')
@@ -128,7 +120,6 @@ class Log(models.Model):
 class AbstractModelMeta(ABCMeta, type(models.Model)):...
 class BaseData(models.Model, metaclass=AbstractModelMeta):
     log: Log
-
     create_url: str
     url: str
 
@@ -168,20 +159,42 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
     def get_active_sessions_count(self):
         return self._get_session_count(is_active=True)
 
-    @abstractmethod
-    def close(self, request, *args, **kwargs) -> None:
-        '''
-        '''
-    
-    @abstractmethod
-    def open(self, request, *args, **kwargs) -> Self:
-        '''
-        '''
 
-    def update_obj(self, data_dict):
-        for key, value in data_dict.items():
-            setattr(self, key, value)
-        self.save()
+    def close(self, *args, **kwargs) -> None:
+        self.delete()
+
+    @classmethod
+    @strip_args('name')
+    def open(cls, user, name, session_open, color, *args, **kwargs) -> list[Self, 'SessionsList']:
+        data_obj = cls.objects.create(
+            session_master=user,
+            session_open = session_open,
+            name=name,
+        )
+        data_obj.save()
+
+        if session_open:
+           data_obj.setup_sharing() 
+
+        session = SessionsList.objects.create(
+            name = name,
+            user = user,
+            content_type=ContentType.objects.get_for_model(cls),
+            object_id=data_obj.pk,
+            color=color,
+        )
+
+        session.save()
+
+        log_entry = Log.objects.create(
+            log_text=f"Session created by {user.get_username()} for SSHData: {data_obj.name}",
+        )
+
+        log_entry.save()
+
+        data_obj.logs.add(log_entry)
+
+        return data_obj, session
 
     def setup_sharing(self):
         self.session_open = True 
@@ -193,6 +206,11 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
     def stop_sharing(self):
         self.session_open = False 
         self.session_key = None
+        self.save()
+
+    def update_obj(self, data_dict):
+        for key, value in data_dict.items():
+            setattr(self, key, value)
         self.save()
 
     
@@ -211,6 +229,7 @@ class NotesData(BaseData):
 
     def __str__(self):
         return f"Note: {self.name}"
+    
 
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
@@ -236,9 +255,10 @@ class SSHData(BaseData):
     def __str__(self):
         return f"SSH Connection: {self.name}"
     
-    def close(self):
+    def close(self, *args, **kwargs):
+        super().close()
         self.disconnect()
-        self.delete()
+
 
     async def read(self):
         data = await SSHModule.read(await self.__get_session_id())
@@ -354,18 +374,13 @@ class SSHData(BaseData):
 
     @classmethod
     @strip_args('name', 'hostname', 'username', 'password', 'private_key', 'passphrase', 'port', 'ip')
-    def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, session_open, save=False, save_session=None, **kwargs):
-        ssh_data = cls.objects.create(
-            session_master=user,
-            session_open = session_open,
-            name=name,
-            ip=ip,
-            hostname=hostname,
-            port=port,
-            save_session=save_session,
-        )
-        ssh_data.save()
-        
+    def open(cls, user: AccountData, name, hostname, username, password, private_key, passphrase, port, ip, *args, color=COLOR_PALETTE[0], session_open=False, save=False, save_session=None, **kwargs):
+        ssh_data, session = super().open(user, name, session_open, color, *args, **kwargs)
+
+        ssh_data.ip=ip
+        ssh_data.hostname=hostname
+        ssh_data.port=port
+
         if save:
             SavedHost.objects.create(
                 user = user,
@@ -376,37 +391,25 @@ class SSHData(BaseData):
                 password = password,
                 private_key = private_key,
                 passphrase = passphrase,
-                port = port
+                port = port,
+                color = color,
             )
 
-        session = SessionsList.objects.create(
-            name = name,
-            user = user,
-            content_type=ContentType.objects.get_for_model(cls),
-            object_id=ssh_data.pk
-        )
-
-        session.save()
-
-        log_entry = Log.objects.create(
-            log_text=f"Session created by {user.get_username()} for SSHData: {ssh_data.name}",
-        )
-
-        log_entry.save()
-
-        ssh_data.logs.add(log_entry)
+        ssh_data.save_session=save_session
+        
+        ssh_data.save()
 
         cls.cache_credentials(username=username, password=password, private_key=private_key,
-                              passphrase=passphrase, cache_key=session.object_id)
+                              passphrase=passphrase, cache_key=ssh_data.pk)
 
-        return ssh_data
+        return ssh_data, session
 
 class SessionsList(models.Model):
     name = models.CharField(max_length=100, default='Session', help_text='Name of the tab in fronend.')
     user = models.ForeignKey(AccountData, on_delete=models.CASCADE, related_name='sessions', help_text='The user associated with the session.')
     sharing_enabled = models.BooleanField(default=False, help_text='Flag indicating if sharing is enabled for the session.')
     is_active = models.BooleanField(default=True, help_text='Flag indicating if the session is active.')
-    color = ColorField(format="hexa",  blank=True, null=True, help_text="Tab color", samples=SavedHost.COLOR_PALETTE)
+    color = ColorField(format="hexa",  blank=True, null=True, help_text="Tab color", samples=COLOR_PALETTE)
 
     # GenericForeignKey to reference either SSHData or NotesData
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, limit_choices_to={'model__in': ['sshdata', 'notesdata']})
@@ -439,7 +442,20 @@ class SessionsList(models.Model):
         return f"{self.user.username}'s session {self.pk}"
     
     @classmethod
-    def join(cls, user, data_obj, name):
+    def joinWithOutContext(cls, user, session_key):
+        other_session =  SessionsList.get_session_from_key(session_key)
+
+        if other_session:
+            return SessionsList._join(
+                user=user,
+                data_obj = other_session.content_object,
+                name =  other_session.content_object.name,
+            )
+
+        return None, False
+    
+    @classmethod
+    def _join(cls, user, data_obj, name):
         session, created = cls.objects.get_or_create(
             user = user,
             content_type=ContentType.objects.get_for_model(data_obj),

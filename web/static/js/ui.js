@@ -23,8 +23,18 @@ function filterAccordionItems(filterString) {
 }
 
 
+const copyToClipboard = async (e) => {
+  const element = e.target;
+  await navigator.clipboard.writeText(element.textContent);
+  element.classList.add('jello-horizontal');
+  setTimeout(function() {
+    element.classList.remove('jello-horizontal');
+  }, 1000);
+};
+
 
 function addSavedSession(name, hostname, ip, pk, color, port, created_at) {
+  // console.error('Add save session with id:', pk)
   const subfield = hostname ? hostname : ip
   const colorfiedl = color ? `<svg width="50" height="50" viewBox="0 0 100 100"><circle cx="30" cy="50" r="25" fill="${color}"></circle></svg>`: ''
 
@@ -112,12 +122,7 @@ function addSavedSessions(saved_session_list) {
       )
     })
   } else {
-    accordionFlush.innerHTML = `<div class="col-12 text-center">
-    <span >
-      Currently you have no saved session!
-    </span>
-    <button class="btn btn-success m-3" onclick="addCreateTabPanels(); closeOffCanvas();" >Create new session</button></div>
-    `
+    accordionFlush.innerHTML = `<div class="col-12 text-center"><span >Currently you have no saved session!</span><button class="btn btn-success m-3" onclick="addCreateTabPanels(); closeOffCanvas();" >Create new session</button></div>`
   }
 }
 
@@ -127,11 +132,20 @@ function removeSavedSession(save_session_id) {
     accordion.remove();
     deleteSaveSession(save_session_id)
   }
+
+  const accordionFlush = document.getElementById('accordionFlush');
+  if (!accordionFlush || (accordionFlush && accordionFlush.childElementCount)) return
+
+  accordionFlush.innerHTML = `<div class="col-12 text-center"><span >Currently you have no saved session!</span><button class="btn btn-success m-3" onclick="addCreateTabPanels(); closeOffCanvas();" >Create new session</button></div>`
 }
-function prepareSavedSessions(){
-  let saved_session_list = getSavedSessions();
-  addSavedSessions(saved_session_list)
+function prepareSavedSessions(time = 1000){
+  setTimeout(function() {
+    let saved_session_list = getSavedSessions();
+    addSavedSessions(saved_session_list);
+  }, time);
 }
+
+
 // Context menu
 
 function __generateMenuList(session_id, button){
@@ -227,14 +241,19 @@ function sessionSharingDisabled(){
 }
 
 function sessionSharingEnabled(session_key){
-  let toggleBtn = document.getElementById('shareSession')
-  let sessionSahre = document.getElementById('sessionkey')
+  const toggleBtn = document.getElementById('shareSession')
+  const sessionShare = document.getElementById('sessionkey')
 
   toggleBtn.textContent = 'Disbale sharing'
   toggleBtn.classList.remove('bg-sky-700');
   toggleBtn.classList.add('btn-danger');
-  sessionSahre.innerHTML = `Session sharing enabled! Session key: <code>${session_key}</code>`
-  
+  let url = window.location.protocol + "//" + window.location.host + "/terminal/join/" + session_key + '/'
+  let session_id = `Session key: <div title="Click to copy!" style="cursor: pointer; font-size: 75%; color: #e83e8c;" class='text-center copyOnClick text-truncate mx-4'>${session_key}</div>`
+  let session_link = `Sessoion link: <div title="Click to copy!" style="cursor: pointer; font-size: 75%; color: #e83e8c;" class='text-center copyOnClick text-truncate mx-5'>${url}</div>`
+  sessionShare.innerHTML = `Session sharing enabled! ${session_id}<br />${session_link}`;
+
+  const btns = sessionShare.querySelectorAll('.copyOnClick');
+  btns.forEach(btn => btn.addEventListener('click', copyToClipboard));
 }
 
 function __generateContextMenu(menuItems) {
@@ -425,7 +444,7 @@ function removeTabListColor(session_id) {
 }
 
 
-function updateTabToTabList(current_id, session_id, name){
+function updateTabToTabList(current_id, session_id, name, color){
   if (current_id == session_id || !current_id) return;
 
   const currentBtn = document.getElementById(`nav-${current_id}-tab`);
@@ -438,6 +457,7 @@ function updateTabToTabList(current_id, session_id, name){
     currentBtn.setAttribute('aria-controls', `nav-${session_id}`);
   }
   if (name) currentBtn.textContent = name;
+  if (color) updateTabListColor(session_id, color);
 
 }
 
@@ -461,7 +481,6 @@ function addPanelTabToPanels(session_id, url) {
     iframe.allowfullscreen = true;
     iframe.addEventListener('DOMContentLoaded', function () {
       iframe.contentDocument.addEventListener('click', function () {
-        console.error('test')
             hideMenu();
         });
     });
@@ -554,9 +573,10 @@ function chooseLastElementForSessions(sessions) {
     );
 }
 
-function updateElementForSession(current_id, session_id, name){
-  updateTabToTabList(current_id, session_id, name)
+function updateElementForSession(current_id, session_id, name, color){
+  updateTabToTabList(current_id, session_id, name, color)
   updatePanelFromTabPanels(current_id, session_id)
+
 }
 
 // CREATE PANEL
@@ -564,9 +584,10 @@ function addCreateTabPanels(){
     removeElementsForSessions([{pk:'create'}])
 
     addTabToTabList('create', '*New');
-    addPanelTabToPanels('create', '/create');
+    addPanelTabToPanels('create', '/create/');
     chooseElementForSession('create');
 }
+
 
 //  SIGANLS
 window.addEventListener('message', function(event) {
@@ -593,3 +614,63 @@ window.addEventListener('message', function(event) {
       console.error('Invalid message format:', event.data);
     }
 });
+
+
+const main_terminal = async ( ) => {
+  let sessions = getSessions()
+  addElementsForSessions(sessions);
+  chooseLastElementForSessions(sessions);
+
+  document.getElementById('createTerminal').addEventListener('click', (e)=>{
+    addCreateTabPanels()
+  })
+
+  document.getElementById('search-accordion').addEventListener('input', function(e) {
+      const filterValue = e.target.value.trim(); 
+      filterAccordionItems(filterValue);
+  });
+
+  prepareSavedSessions()
+
+
+  document.getElementById('joinSessionBtn').addEventListener('click', function(e) {
+    let input = document.getElementById('joinSessionInput')
+    const session_key = input.value
+    input.value = ''
+
+    if (!session_key) return;
+    
+    let result = joinSession(session_key)
+    if (!result) return;
+
+    let session = result.session
+
+    if (!session) return;
+    closeOffCanvas();
+    session_list.push(session)
+    addElementsForSession(session)
+  });
+
+  document.getElementById('shareSession').addEventListener('click', function(e) {
+    const session_id = this.getAttribute('data-session-id')
+    const result = shareSession(session_id)
+    let session = getSession(session_id, force=true)
+
+    if (session.session_open) {
+        const session_key = result.session_key
+        
+        sessionSharingEnabled(session_key)
+    } else {
+        sessionSharingDisabled()
+    }
+  });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectValue = urlParams.get('select');
+  if (session_list.includes(selectValue)) chooseElementForSession(selectValue)
+}
+
+window.addEventListener('load', main_terminal)
+
+
+

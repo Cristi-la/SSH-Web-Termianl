@@ -1,9 +1,14 @@
 from django.urls import path
-from  terminal.views import SSHDetailView, NoteDetailView, SSHCreateView, TermianlView, LoginView, LogoutView, TerminalCreatView, NoteCreateView
+from  terminal.views import (
+    SSHDetailView, NoteDetailView, SSHCreateView,
+    TermianlView, LoginView, LogoutView,
+    TerminalCreatView, NoteCreateView, TerminalJoinView
+)
 
 urlpatterns = [
     path('create/', TerminalCreatView.as_view(), name='create'),
     path('terminal/', TermianlView.as_view(), name='terminal'),
+    path('terminal/join/<str:session_key>/', TerminalJoinView.as_view(), name='terminal.join'),
     path('', TermianlView.as_view(), name='terminal'),
 
     path('ssh/<int:pk>/', SSHDetailView.as_view(), name='ssh.detail'),

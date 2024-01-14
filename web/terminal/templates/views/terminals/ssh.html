@@ -1,23 +1,16 @@
 {% extends "base.html" %}
 
 {% load static %}
-{% load component_tags %}
 {% load django_bootstrap5 %}
 {% load django_bootstrap_input_group %}
 
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
-    <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
-    <script  src="{% static 'js/events.js' %}"></script>
     <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
-
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
     <script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
-    <script type="text/javascript">
-        var UserobjectPk = {{ user_object.pk }};
-    </script>
     <script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
 {% endblock %}
 
@@ -50,21 +43,19 @@
     </div>
 
     <script type="text/javascript">
-
-    window.addEventListener('load', ()=>{
-        emitElementForSessionEvent('create', '{{ user_object.pk }}', '{{ user_object.name }}')
-        const terminalManager = new TerminalManager()
-        terminalManager.createTerminal()
-        terminalManager.openTerminal(document.getElementById('terminal'))
-        const form = document.querySelector('#ReconnectModal form')
-        form.addEventListener('submit', function(event) {
-            handleFormSubmit(event, terminalManager)
+        window.addEventListener('load', ()=>{
+            const terminalManager = new TerminalManager()
+            terminalManager.createTerminal()
+            terminalManager.openTerminal(document.getElementById('terminal'))
+            const form = document.querySelector('#ReconnectModal form')
+            form.addEventListener('submit', function(event) {
+                handleFormSubmit(event, terminalManager)
+            })
+            clearFormOnModalClose('ReconnectModal', 'form');
+            const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`, terminalManager)
+            socketManager.setup()
         })
-        clearFormOnModalClose('ReconnectModal', 'form');
-        const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`, terminalManager)
-        socketManager.setup()
-    })
-</script>
+    </script>
 
 
 {% endblock %}
