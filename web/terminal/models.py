@@ -1,3 +1,4 @@
+import asyncio
 from typing import Self
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -237,7 +238,7 @@ class SSHData(BaseData):
         return f"SSH Connection: {self.name}"
     
     def close(self):
-        self.disconnect()
+        SSHModule.disconnect(self.id)
         self.delete()
 
     async def read(self):
@@ -307,7 +308,8 @@ class SSHData(BaseData):
         updated_buffer = self.__get_buffer(self.id)
         self.__set_buffer(self.id, updated_buffer)
         await self.__flush_buffer()
-        await SSHModule.disconnect(await self.__get_session_id())
+        session_id = await self.__get_session_id()
+        SSHModule.disconnect(session_id)
 
     async def resize_terminal(self):
         await SSHModule.resize_terminals_in_group(await self.__get_session_id(),

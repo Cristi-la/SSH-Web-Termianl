@@ -81,7 +81,7 @@ class SSHModule:
                 raise
 
     @classmethod
-    async def disconnect(cls, group_name):
+    def disconnect(cls, group_name):
         if group_name in cls.active_connections:
             cls.active_connections[group_name] -= 1
 
