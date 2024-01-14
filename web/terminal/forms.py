@@ -27,7 +27,7 @@ class SSHDataForm(TerminalBaseForm):
         'name', 'session_open',
         ('Connection details:', ('hostname', 'ip', 'port')),
         ('Authentication:', ('username', 'password')),
-        'private_key', 'passphrase'
+        'private_key', 'passphrase', 'color'
     ]
 
     def clean(self, *args, **kwargs):
