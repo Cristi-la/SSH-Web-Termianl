@@ -5,8 +5,6 @@
 
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
-{% comment %} <!-- Content-Security-Policy meta tag --> {% endcomment %}
-<meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'">
 <link rel="stylesheet" href="{% static 'css/base_terminal.css' %}">
 <script  src="{% static 'js/ui.js' %}"></script>
 <script  src="{% static 'js/communicate.js' %}"></script>
@@ -14,7 +12,6 @@
 {% block content %}
 
 <main class='h-100 d-flex flex-column align-items-stretch'>
-    {% comment %} d-flex flex-nowrap justify-content-start {% endcomment %}
     <div class="mb-2 d-flex flex-nowrap justify-content-start">
         <div id="tablist" class="order-0 flex-fill nav nav-tabs p-1 d-flex align-items-center justify-content-start" id="nav-tab" role="tablist">
           <button id="createTerminal" class="nav-link add d-flex align-items-center justify-content-center" type="button" role="tab" >
@@ -55,62 +52,6 @@
     </div>
 </main>
 
-<script>
-    window.addEventListener('load', function(event) {
-        let sessions = getSessions()
-        addElementsForSessions(sessions);
-        chooseLastElementForSessions(sessions);
-
-        document.getElementById('createTerminal').addEventListener('click', (e)=>{
-            addCreateTabPanels()
-        })
-
-        document.getElementById('search-accordion').addEventListener('input', function(e) {
-            const filterValue = e.target.value.trim(); 
-            filterAccordionItems(filterValue);
-        });
-
-        prepareSavedSessions()
-
-
-        document.getElementById('joinSessionBtn').addEventListener('click', function(e) {
-            let input = document.getElementById('joinSessionInput')
-            const session_key = input.value
-            input.value = ''
-
-            if (!session_key) return;
-            
-            let result = joinSession(session_key)
-            if (!result) return;
-
-            let session = result.session
-
-            if (!session) return;
-            closeOffCanvas();
-            session_list.push(session)
-            addElementsForSession(session)
-        });
-
-        document.getElementById('shareSession').addEventListener('click', function(e) {
-            const session_id = this.getAttribute('data-session-id')
-            const result = shareSession(session_id)
-            let session = getSession(session_id, force=true)
-
-            if (session.session_open) {
-                const session_key = result.session_key
-                
-                console.error(session_key)
-                sessionSharingEnabled(session_key)
-            } else {
-                sessionSharingDisabled()
-            }
-        });
-    });
-
-
-</script>
-
-
 <div class="context-menu">
     <div class="container" id="contextMenu" style="display:none">
         <div class="menu">
@@ -125,7 +66,7 @@
           <h5 class="modal-title" id="staticBackdropLabel">Session center</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body" id="sessionkey">
+        <div class="modal-body text-center d-flex justify-content-center align-content-center flex-column" id="sessionkey">
           Sharing key: <span id="sessionkey">...</span>
         </div>
         <div class="modal-footer text-center">

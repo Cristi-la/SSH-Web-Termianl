@@ -19,7 +19,7 @@
         <h1 class="fs-1 mt-2 fw-bold text-center">
             {% if prompt %}{{prompt}}{% else %}Create Session{% endif %}
         </h1>
-        <form method="post" class="p-4" class="overflow-auto" action="{{action}}">
+        <form method="post" class="p-4" class="overflow-auto">
             {% csrf_token %}
             {% bootstrap_grouped_form form %}
 
@@ -30,5 +30,23 @@
     </div>
 </main>
 
+
+<script>
+    function changeLabelColor(value, labelId) {
+        var label = document.getElementById(labelId);
+        label.style.color = value;
+    }
+
+    window.addEventListener('load', ()=>{
+        const radioInputs = document.querySelectorAll('input[type=radio][name=color]');
+        
+        radioInputs.forEach(radioInput => {
+            const label = document.querySelector(`[for=${radioInput.id}]`);
+            
+            label.style.color = radioInput.value
+            label.classList.add('fw-bold')
+        });
+    });
+</script>
 
 {% endblock %}

@@ -19,13 +19,26 @@
 
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
 
+    {% if enable_pass %}
+    <link rel="stylesheet" href="{% static 'css/subpage.css' %}">
+    <script  src="{% static 'js/events.js' %}"></script>
+
+    <script type="text/javascript">
+        var UserobjectPk = {{ user_object.pk }};
+        var UserobjectName = '{{ user_object.name }}';
+        var objectPk = {{ object.pk }};
+
+        emitElementForSessionEvent('create', UserobjectPk, UserobjectName, '{{user_object.color}}')
+    </script>
+    {% endif %}
+
     {% block meta_tags %}{% endblock %}
 
 </head>
 <body id="page-top">
 
     <div id="message">
-        <div class="validation p-3 fw-4 text-center">
+        <div id="p-3 fw-4 text-center messge-animmation">
             {% bootstrap_messages %}
         </div>
     </div>

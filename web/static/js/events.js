@@ -15,12 +15,12 @@ function emitCloseEvent(session_id){
     emitSingleEvent('removeElementsForSession', [session_id])
 }
 
-function emitElementForSessionEvent(current_id, session_id, name){
+function emitElementForSessionEvent(current_id, session_id, name, color){
     console.log('session update event')
-    emitSingleEvent('updateElementForSession', [current_id, session_id, name])
+    emitSingleEvent('updateElementForSession', [current_id, session_id, name, color])
 }
 
 function updateSaveSessionsEvent(){
     console.log('save session update event')
-    emitSingleEvent('prepareSavedSessions', [])
+    emitSingleEvent('prepareSavedSessions', [2000])
 }

@@ -184,3 +184,12 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
+
+
+COLOR_PALETTE = [
+    ("#BA1C1C", "Correl Red", ),
+    ("#2E9329", "Forest Green", ),
+    ("#248BC2", "Deep Blue", ),
+    ("#BD2DB6", "Steel Pink", ),
+    ("#E0A61E", "Harvest Gold", ),
+]
