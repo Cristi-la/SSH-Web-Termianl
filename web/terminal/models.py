@@ -323,8 +323,6 @@ class SSHData(BaseData):
             raise
 
     async def disconnect(self):
-        updated_buffer = self.__get_buffer(self.id)
-        self.__set_buffer(self.id, updated_buffer)
         await self.__flush_buffer()
         session_id = await self.__get_session_id()
         SSHModule.disconnect(session_id)
@@ -366,6 +364,7 @@ class SSHData(BaseData):
         cls._buffers[instance_id] = data
 
     async def get_content(self):
+        await self.__flush_buffer()
         return self.content
 
     async def __flush_buffer(self):

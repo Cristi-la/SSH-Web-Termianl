@@ -32,7 +32,8 @@ class SessionCosumer(AsyncWebsocketConsumer):
         await self.accept()
 
         if obj.content_type.model == 'sshdata':
-            await self.send_group_message_inclusive(type='info', message=await data_obj.get_content())
+            await self.send_group_message_inclusive(type='action', message={'type': 'load_content',
+                                                                            'data': await data_obj.get_content()})
             try:
                 await data_obj.connect()
             except ReconnectRequired as e:
