@@ -35,13 +35,13 @@ class SessionCosumer(AsyncWebsocketConsumer):
             return
 
         if obj.content_type.model == 'sshdata':
-            await self.send_group_message_inclusive(type='action', message={'type': 'load_content',
+            await self.send_group_message_inclusive(msg_type='action', message={'type': 'load_content',
                                                                             'data': await data_obj.get_content()})
             try:
                 await data_obj.connect()
             except ReconnectRequired as e:
                 await self.send_group_message_inclusive(e)
-                await self.send_group_message_inclusive(type='action', message={'type': 'require_reconnect',
+                await self.send_group_message_inclusive(msg_type='action', message={'type': 'require_reconnect',
                                                                                 'session_saved': e.session_saved})
             except Exception as e:
                 await self.send_group_message_inclusive(e)
@@ -57,9 +57,9 @@ class SessionCosumer(AsyncWebsocketConsumer):
         if obj.content_type.model == 'sshdata':
             await data_obj.disconnect()
 
-    async def send_group_message_inclusive(self, message, type=None):
+    async def send_group_message_inclusive(self, message, msg_type=None):
         if type is not None:
-            message = {'type': type, 'content': message}
+            message = {'type': msg_type, 'content': message}
         elif isinstance(message, Exception):
             message = {'type': 'error', 'content': str(message)}
         else:
@@ -73,10 +73,33 @@ class SessionCosumer(AsyncWebsocketConsumer):
             }
         )
 
+    async def send_group_message_exclusive(self, message, msg_type=None):
+        if type is not None:
+            message = {'type': msg_type, 'content': message}
+        elif isinstance(message, Exception):
+            message = {'type': 'error', 'content': str(message)}
+        else:
+            message = {'type': 'info', 'content': message}
+
+        await self.channel_layer.group_send(
+            self.ssh_session_id,
+            {
+                'type': 'group_message_exclusive',
+                'message': message,
+                "sender_channel_name": self.channel_name
+            }
+        )
+
     async def group_message_inclusive(self, event):
         await self.send(text_data=json.dumps({
             'message': event['message']
         }))
+
+    async def group_message_exclusive(self, event):
+        if event.get('sender_channel_name') != self.channel_name:
+            await self.send(text_data=json.dumps({
+                'message': event['message']
+            }))
 
     async def receive(self, text_data=None, bytes_data=None):
         message = json.loads(text_data)
@@ -117,12 +140,12 @@ class SessionCosumer(AsyncWebsocketConsumer):
                         await data_obj.connect()
                     except ReconnectRequired as e:
                         await self.send_group_message_inclusive(e)
-                        await self.send_group_message_inclusive(type='action', message={'type': 'require_reconnect',
+                        await self.send_group_message_inclusive(msg_type='action', message={'type': 'require_reconnect',
                                                                                         'session_saved': e.session_saved})
                     except Exception as e:
                         await self.send_group_message_inclusive(e)
 
-                    await self.send_group_message_inclusive(type='action', message={'type': 'reconnect_successful'})
+                    await self.send_group_message_inclusive(msg_type='action', message={'type': 'reconnect_successful'})
                     self.start_read()
 
                 case 'resize':
@@ -136,6 +159,29 @@ class SessionCosumer(AsyncWebsocketConsumer):
                         obj, data_obj = await self.__get_session()
                         await data_obj.set_terminal_size(size.get('cols'), size.get('rows'))
                         await data_obj.resize_terminal()
+
+        elif obj.content_type.model == 'notesdata':
+            match message.get('action'):
+                case 'insert':
+                    data = message.get('data')
+                    await self.send_group_message_exclusive(msg_type='action', message={'type': 'insert',
+                                                                                        'text': data.get('text'),
+                                                                                        'index': data.get('index')})
+
+                case 'delete':
+                    data = message.get('data')
+                    await self.send_group_message_exclusive(msg_type='action', message={'type': 'delete',
+                                                                                        'length': data.get('length'),
+                                                                                        'index': data.get('index')})
+
+                case 'format-change':
+                    data = message.get('data')
+                    await self.send_group_message_exclusive(msg_type='action', message={'type': 'format-change',
+                                                                                        'format_type':
+                                                                                            data.get('format_type'),
+                                                                                        'value': data.get('value'),
+                                                                                        'index': data.get('index'),
+                                                                                        'length': data.get('length')})
 
 
 

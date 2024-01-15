@@ -1,6 +1,7 @@
 class NoteManager {
     constructor() {
         this.quill = null
+        this.socket = null
     }
 
     createEditor() {
@@ -30,36 +31,51 @@ class NoteManager {
             bold: {
                 key: 'B',
                 shortKey: true,
-                handler: function (range, context) {
+                handler: (range, context) => {
                     this.quill.format('bold', !context.format.bold);
+                    if (range && range.length > 0) {
+                        this.sendFormatChangeInfo('bold', !context.format.bold, range.index, range.length);
+                    }
                 }
             },
             italic: {
                 key: 'I',
                 shortKey: true,
-                handler: function (range, context) {
+                handler: (range, context) => {
                     this.quill.format('italic', !context.format.italic);
+                    if (range && range.length > 0) {
+                        this.sendFormatChangeInfo('italic', !context.format.italic, range.index, range.length);
+                    }
                 }
             },
             underline: {
                 key: 'U',
                 shortKey: true,
-                handler: function (range, context) {
+                handler: (range, context) => {
                     this.quill.format('underline', !context.format.underline);
+                    if (range && range.length > 0) {
+                        this.sendFormatChangeInfo('underline', !context.format.underline, range.index, range.length);
+                    }
                 }
             },
             strike: {
                 key: 'S',
                 shortKey: true,
-                handler: function (range, context) {
+                handler: (range, context) => {
                     this.quill.format('strike', !context.format.strike);
+                    if (range && range.length > 0) {
+                        this.sendFormatChangeInfo('strike', !context.format.strike, range.index, range.length);
+                    }
                 }
             },
             clean: {
                 key: 'Y',
                 shortKey: true,
-                handler: function (range) {
+                handler: (range) => {
                     this.quill.removeFormat(range);
+                    if (range && range.length > 0) {
+                        this.sendFormatChangeInfo('default', null, range.index, range.length);
+                    }
                 }
             }
         }
@@ -81,6 +97,8 @@ class NoteManager {
 
         this.addToolTips();
         this.addUndoRedoListeners();
+        this.trackTextChanges();
+        this.trackHighlightAndFormatting()
     }
 
     addUndoRedoListeners() {
@@ -144,5 +162,147 @@ class NoteManager {
             }
         });
 
+    }
+
+    trackTextChanges() {
+        this.quill.on('text-change', (delta, oldDelta, source) => {
+            if (source === 'user') {
+                delta.ops.forEach(op => {
+                    if (op.insert) {
+                        if (typeof op.insert === 'string') {
+                            let index = this.calculateIndex(delta, op);
+                            let formats = this.quill.getFormat(index, op.insert.length);
+                            this.sendData(JSON.stringify({
+                                'action': 'insert',
+                                'data': {'text': op.insert, 'index': index}
+                            }))
+
+                            if (Object.keys(formats).length === 0) {
+                                this.sendFormatChangeInfo('default', null, index, op.insert.length);
+                            } else {
+                                for (let format in formats) {
+                                    this.sendFormatChangeInfo(format, formats[format], index, op.insert.length);
+                                }
+                            }
+                        }
+                    } else if (op.delete) {
+                        let index = this.calculateIndex(delta, op);
+                        this.sendData(JSON.stringify({
+                            'action': 'delete',
+                            'data': {'length': op.delete, 'index': index}
+                        }))
+                    }
+                });
+            }
+        });
+    }
+
+    calculateIndex(delta, op) {
+        let index = 0;
+        for (let d of delta.ops) {
+            if (d === op) {
+                break;
+            }
+            if (d.retain) {
+                index += d.retain;
+            } else if (d.insert) {
+                index += (typeof d.insert === 'string') ? d.insert.length : 1;
+            }
+        }
+        return index;
+    }
+
+    setWebSocket(socket) {
+        this.socket = socket;
+    }
+
+    sendData(data_json) {
+        this.socket.send(data_json);
+    }
+
+    insertText(text, index) {
+        this.quill.insertText(index, text);
+    }
+
+    deleteText(length, index) {
+        if (length > 0) {
+            this.quill.deleteText(index, length);
+        }
+    }
+
+    trackHighlightAndFormatting() {
+        let currentFormats = {};
+
+        this.quill.on('text-change', (delta, oldDelta, source) => {
+            if (source === 'user') {
+                let currentIndex = 0;
+                delta.ops.forEach((op) => {
+                    if (op.retain) {
+                        currentIndex += op.retain;
+                        if (op.attributes) {
+                            this.handleAttributeChange(op.attributes, currentIndex - op.retain, op.retain);
+                            currentFormats = {...currentFormats, ...op.attributes};
+                        } else {
+                            this.handleFormatRemoval(currentFormats, currentIndex - op.retain, op.retain);
+                            currentFormats = {};
+                        }
+                    } else if (op.insert) {
+                        if (typeof op.insert === 'string') {
+                            this.handleTextInsertion(currentFormats, currentIndex, op.insert);
+                            currentIndex += op.insert.length;
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    sendFormatChangeInfo(format, value, index, length) {
+        const data = {
+            action: 'format-change',
+            data: {
+                format_type: format,
+                value: value,
+                index: index,
+                length: length
+            }
+        };
+
+        this.sendData(JSON.stringify(data))
+    }
+
+    applyFormatChanges(format, value, index, length) {
+        if (index == null || length == null || format == null) {
+            console.error("Invalid parameters for applyTrackedChanges.");
+            return;
+        }
+
+        if (format === 'default') {
+            this.quill.removeFormat(index, length);
+        } else {
+            this.quill.formatText(index, length, {[format]: value});
+        }
+    }
+
+    handleTextInsertion(currentFormats, index, text) {
+        if (Object.keys(currentFormats).length > 0) {
+            for (let format in currentFormats) {
+                this.sendFormatChangeInfo(format, currentFormats[format], index, text.length);
+            }
+        }
+    }
+
+    handleFormatRemoval(currentFormats, index, length) {
+        for (let format in currentFormats) {
+            if (!currentFormats[format]) {
+                this.sendFormatChangeInfo(format, false, index, length);
+            }
+        }
+    }
+
+    handleAttributeChange(attributes, index, length) {
+        for (let format in attributes) {
+            this.sendFormatChangeInfo(format, attributes[format], index, length);
+        }
     }
 }

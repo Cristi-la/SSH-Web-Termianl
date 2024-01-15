@@ -31,10 +31,10 @@
 
     <script type="text/javascript">
         window.addEventListener('load', () => {
-            const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`)
-            socketManager.setupNoteLogic()
             const noteManager = new NoteManager()
             noteManager.createEditor()
+            const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`, null, noteManager)
+            socketManager.setupNoteLogic()
 
         })
     </script>
