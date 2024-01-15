@@ -7,7 +7,7 @@
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
     <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/terminal.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ssh.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
     <script type="text/javascript" src="{% static 'js/tools/terminal.js' %}"></script>
@@ -53,7 +53,7 @@
             })
             clearFormOnModalClose('ReconnectModal', 'form');
             const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`, terminalManager)
-            socketManager.setup()
+            socketManager.setupTerminalLogic()
         })
     </script>
 

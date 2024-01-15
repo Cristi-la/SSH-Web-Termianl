@@ -1,0 +1,56 @@
+.ql-toolbar {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    color: white;
+}
+
+.ql-toolbar .ql-stroke {
+    fill: none;
+    stroke: #fff;
+}
+
+.ql-toolbar .ql-fill {
+    fill: #fff;
+    stroke: none;
+}
+
+.ql-toolbar .ql-picker {
+    color: #fff;
+}
+
+.ql-toolbar button.ql-redo svg,
+.ql-toolbar button.ql-undo svg {
+    fill: #fff;
+    stroke: none;
+}
+
+.ql-toolbar button.ql-blockquote svg path,
+.ql-toolbar button.ql-blockquote svg g path,
+.ql-toolbar button.ql-blockquote svg line,
+.ql-toolbar button.ql-blockquote svg polyline,
+.ql-toolbar button.ql-blockquote svg,
+.ql-toolbar button.ql-blockquote svg * {
+    stroke: white;
+    fill: white;
+}
+
+.ql-toolbar .ql-picker-options {
+    background-color: #10142c;
+    color: white;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    overflow: auto !important;
+}
+
+main {
+    flex-grow: 1;
+    display: flex;
+}
+
+#editor-container {
+    flex-grow: 1;
+}

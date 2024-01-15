@@ -60,6 +60,7 @@ def check_sharing_limits(sender, instance, **kwargs):
                 raise ValidationError(f"The system has reached the maximum limit of {MAX_SSH_SHARING} SSH sharings for this session.")
 
 @receiver(pre_delete, sender=SSHData)
+@receiver(pre_delete, sender=NotesData)
 def closing_shared_tabs(sender, instance, **kwargs):
     channel_layer = get_channel_layer()
     sshdata_content_type = ContentType.objects.get_for_model(instance)
