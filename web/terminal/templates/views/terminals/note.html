@@ -3,16 +3,20 @@
 {% load static %}
 {% comment %} Meta tags {% endcomment %}
 {% block meta_tags %}
-
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/note.css' %}">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script type="text/javascript" src="{% static 'js/tools/editor.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/channels.js' %}"></script>
+
 {% endblock %}
 
 
-{% comment %} 
-UWAGA MATEUSZ!!!!!!!!!!!!!!!!!!!!!!!!
-od teraz te zmienne ustawiają się same! nie musisz tego robić.... 
-var UserobjectPk = {{ user_object.pk }};
-var objectPk = {{ object.pk }};
+{% comment %}
+    UWAGA MATEUSZ!!!!!!!!!!!!!!!!!!!!!!!!
+    od teraz te zmienne ustawiają się same! nie musisz tego robić....
+    var UserobjectPk = {{ user_object.pk }};
+    var objectPk = {{ object.pk }};
 
     Odwołuj się do nich: window.UserobjectPk
 
@@ -20,11 +24,20 @@ var objectPk = {{ object.pk }};
 
 {% block content %}
     <main>
-        <div id="container">
-            NOTATKA
-            <textarea></textarea>
+        <div id="editor-container">
+            <div id="editor"></div>
         </div>
     </main>
+
+    <script type="text/javascript">
+        window.addEventListener('load', () => {
+            const socketManager = new WebSocketManager(`ws://${window.location.host}/ws/session/${window.UserobjectPk}`)
+            socketManager.setupNoteLogic()
+            const noteManager = new NoteManager()
+            noteManager.createEditor()
+
+        })
+    </script>
 {% endblock %}
 
 

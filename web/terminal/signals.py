@@ -1,9 +1,11 @@
 from web.settings import MAX_SSH_SESSIONS, MAX_NOTE_SESSIONS, MAX_NOTE_SHARING, MAX_SSH_SHARING, MAX_USER_NOTE_SESSIONS, MAX_USER_SSH_SESSIONS
-from django.db.models.signals import pre_save, post_delete
+from django.db.models.signals import pre_save, post_delete, pre_delete
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from terminal.models import SessionsList, SSHData, NotesData
 from django.contrib.contenttypes.models import ContentType
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 @receiver(post_delete, sender=SessionsList)
 def sessions_list_deleted(sender, instance, **kwargs):
@@ -56,3 +58,23 @@ def check_sharing_limits(sender, instance, **kwargs):
        
             if instance.content_object.get_sessions_count() >= MAX_SSH_SHARING:
                 raise ValidationError(f"The system has reached the maximum limit of {MAX_SSH_SHARING} SSH sharings for this session.")
+
+@receiver(pre_delete, sender=SSHData)
+@receiver(pre_delete, sender=NotesData)
+def closing_shared_tabs(sender, instance, **kwargs):
+    channel_layer = get_channel_layer()
+    sshdata_content_type = ContentType.objects.get_for_model(instance)
+
+    related_sessions = SessionsList.objects.filter(
+        content_type=sshdata_content_type, object_id=instance.id
+    )
+
+    for session in related_sessions:
+        message = {
+            'type': 'group_message_inclusive',
+            'message': {
+                'type': 'action',
+                'content': {'type': 'del_tab', 'session_id': session.id}
+            }
+        }
+        async_to_sync(channel_layer.group_send)(str(instance.id), message)

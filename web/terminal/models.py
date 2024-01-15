@@ -77,7 +77,7 @@ class AccountData(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
-class SavedHost(models.Model):     
+class SavedHost(models.Model):
     name = models.CharField(max_length=100, default='Session', help_text='Default name of the tab in fronend.')
     user = models.ForeignKey('AccountData', on_delete=models.CASCADE, related_name='saved_hosts', default=None, help_text='The user associated with the saved host.')
     ip = models.GenericIPAddressField(blank=True, null=True, help_text='The IP address of the saved host.')
@@ -173,7 +173,7 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
         data_obj.save()
 
         if session_open:
-           data_obj.setup_sharing() 
+           data_obj.setup_sharing()
 
         session = SessionsList.objects.create(
             name = name,
@@ -212,7 +212,7 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
             setattr(self, key, value)
         self.save()
 
-    
+
 
 class NotesData(BaseData):
     TASK_READER = False
@@ -228,7 +228,7 @@ class NotesData(BaseData):
 
     def __str__(self):
         return f"Note: {self.name}"
-    
+
 
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False
@@ -256,9 +256,8 @@ class SSHData(BaseData):
         return f"SSH Connection: {self.name}"
     
     def close(self, *args, **kwargs):
+        SSHModule.disconnect(self.id)
         super().close()
-        self.disconnect()
-
 
     async def read(self):
         data = await SSHModule.read(await self.__get_session_id())
@@ -324,10 +323,9 @@ class SSHData(BaseData):
             raise
 
     async def disconnect(self):
-        updated_buffer = self.__get_buffer(self.id)
-        self.__set_buffer(self.id, updated_buffer)
         await self.__flush_buffer()
-        await SSHModule.disconnect(await self.__get_session_id())
+        session_id = await self.__get_session_id()
+        SSHModule.disconnect(session_id)
 
     async def resize_terminal(self):
         await SSHModule.resize_terminals_in_group(await self.__get_session_id(),
@@ -366,6 +364,7 @@ class SSHData(BaseData):
         cls._buffers[instance_id] = data
 
     async def get_content(self):
+        await self.__flush_buffer()
         return self.content
 
     async def __flush_buffer(self):
@@ -411,7 +410,7 @@ class SSHData(BaseData):
             )
 
         ssh_data.save_session=save_session
-        
+
         ssh_data.save()
 
         cls.cache_credentials(username=username, password=password, private_key=private_key,
@@ -468,7 +467,7 @@ class SessionsList(models.Model):
             )
 
         return None, False
-    
+
     @classmethod
     def _join(cls, user, data_obj, name):
         session, created = cls.objects.get_or_create(

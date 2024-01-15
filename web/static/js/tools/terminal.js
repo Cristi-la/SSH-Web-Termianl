@@ -2,6 +2,7 @@ class TerminalManager {
     constructor() {
         this.term = null
         this.fitAddon = null
+        this.termContentLoadedFromDb = false
     }
 
     createTerminal() {
