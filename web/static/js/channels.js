@@ -1,10 +1,13 @@
 class WebSocketManager {
-    constructor(url, terminal) {
+    constructor(url, terminal = null) {
         this.websocket = new WebSocket(url)
-        this.terminal = terminal
+
+        if (terminal) {
+            this.terminal = terminal
+        }
     }
 
-    setup() {
+    setupTerminalLogic() {
         this.websocket.onerror = (e) => {
             this.terminal.writeMessage('WebSocket connection error\n\r')
         };
@@ -43,5 +46,23 @@ class WebSocketManager {
                 }
             }
         };
+    }
+
+    setupNoteLogic() {
+        this.websocket.onmessage = (e) => {
+            let data = JSON.parse(e.data);
+            console.log('Data: ', data)
+            if (data.message) {
+                switch (data.message.type) {
+                    case 'action':
+                        if (data.message.content.type === 'del_tab') {
+                            if (window.parent && typeof window.parent.removeElementsForSession === 'function') {
+                                window.parent.removeElementsForSession(data.message.content.session_id)
+                            }
+                        }
+                }
+            }
+        }
+
     }
 }
