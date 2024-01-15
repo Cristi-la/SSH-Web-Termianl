@@ -58,7 +58,7 @@ class SessionCosumer(AsyncWebsocketConsumer):
             await data_obj.disconnect()
 
     async def send_group_message_inclusive(self, message, msg_type=None):
-        if type is not None:
+        if msg_type is not None:
             message = {'type': msg_type, 'content': message}
         elif isinstance(message, Exception):
             message = {'type': 'error', 'content': str(message)}
