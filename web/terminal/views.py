@@ -14,19 +14,16 @@ from terminal.responses import (
     NO_MANDATORY_PARAMS, SESSION_SHARING_DISABLED, NO_SESSION_JOIN,
     SESSION_ALREADY_JOINED
 )
-from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-import json
 from web.settings import COLOR_PALETTE
 from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 # ----------------------
 #  SSH session handling
 # ----------------------
-
 
 class SSHDetailView(TemplateSession):
     template_name  = 'views/terminals/ssh.html'
@@ -144,7 +141,7 @@ class TermianlView(LoginRequiredMixin, TemplateView):
             save_session_id = data.get('save_session')
             save_session = SavedHost.objects.get(user=user, pk=save_session_id) 
 
-            self.object = SSHData.open(
+            ssh_data, session = SSHData.open(
                 user  = user,
                 name = save_session.name,
                 hostname = save_session.hostname,
@@ -159,7 +156,6 @@ class TermianlView(LoginRequiredMixin, TemplateView):
                 save_session = save_session,
                 color = save_session.color
             )
-            session = self.object.sessions.get(user=user)
 
             return JsonResponse({'session_id':  session.pk}, status=200)
         return NO_MANDATORY_PARAMS
