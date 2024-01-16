@@ -3,6 +3,7 @@ class TerminalManager {
         this.term = null
         this.fitAddon = null
         this.termContentLoadedFromDb = false
+        this.socket = null
     }
 
     createTerminal() {

@@ -1,9 +1,13 @@
 class WebSocketManager {
-    constructor(url, terminal = null) {
+    constructor(url, terminal = null, editor = null) {
         this.websocket = new WebSocket(url)
 
         if (terminal) {
             this.terminal = terminal
+        }
+
+        if (editor) {
+            this.editor = editor
         }
     }
 
@@ -49,9 +53,14 @@ class WebSocketManager {
     }
 
     setupNoteLogic() {
+        this.websocket.onopen = () => {
+            if (this.editor) {
+                this.editor.setWebSocket(this.websocket);
+            }
+        };
+
         this.websocket.onmessage = (e) => {
             let data = JSON.parse(e.data);
-            console.log('Data: ', data)
             if (data.message) {
                 switch (data.message.type) {
                     case 'action':
@@ -59,6 +68,13 @@ class WebSocketManager {
                             if (window.parent && typeof window.parent.removeElementsForSession === 'function') {
                                 window.parent.removeElementsForSession(data.message.content.session_id)
                             }
+                        } else if (data.message.content.type === 'insert') {
+                            this.editor.insertText(data.message.content.text, data.message.content.index)
+                        } else if (data.message.content.type === 'delete') {
+                            this.editor.deleteText(data.message.content.length, data.message.content.index)
+                        } else if (data.message.content.type === 'format-change') {
+                            this.editor.applyFormatChanges(data.message.content.format_type, data.message.content.value,
+                                data.message.content.index, data.message.content.length)
                         }
                 }
             }
