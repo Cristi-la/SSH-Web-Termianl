@@ -75,6 +75,8 @@ class WebSocketManager {
                         } else if (data.message.content.type === 'format-change') {
                             this.editor.applyFormatChanges(data.message.content.format_type, data.message.content.value,
                                 data.message.content.index, data.message.content.length)
+                        } else if (data.message.content.type === 'load_content') {
+                            this.editor.loadDelta(data.message.content.delta)
                         }
                 }
             }

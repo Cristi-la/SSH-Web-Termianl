@@ -176,6 +176,9 @@ class NoteManager {
                                 'action': 'insert',
                                 'data': {'text': op.insert, 'index': index}
                             }))
+                            this.sendData(JSON.stringify({'action': 'update_content',
+                                'data': {'delta': this.getDelta()}
+                            }))
 
                             if (Object.keys(formats).length === 0) {
                                 this.sendFormatChangeInfo('default', null, index, op.insert.length);
@@ -191,6 +194,9 @@ class NoteManager {
                             'action': 'delete',
                             'data': {'length': op.delete, 'index': index}
                         }))
+                        this.sendData(JSON.stringify({'action': 'update_content',
+                                'data': {'delta': this.getDelta()}
+                            }))
                     }
                 });
             }
@@ -269,11 +275,14 @@ class NoteManager {
         };
 
         this.sendData(JSON.stringify(data))
+        this.sendData(JSON.stringify({
+            'action': 'update_content',
+            'data': {'delta': this.getDelta()}
+        }))
     }
 
     applyFormatChanges(format, value, index, length) {
         if (index == null || length == null || format == null) {
-            console.error("Invalid parameters for applyTrackedChanges.");
             return;
         }
 
@@ -304,5 +313,13 @@ class NoteManager {
         for (let format in attributes) {
             this.sendFormatChangeInfo(format, attributes[format], index, length);
         }
+    }
+
+    loadDelta(delta) {
+        this.quill.setContents(delta);
+    }
+
+    getDelta() {
+        return this.quill.getContents()
     }
 }

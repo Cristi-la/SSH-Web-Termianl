@@ -215,7 +215,7 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
 
 
 class NotesData(BaseData):
-    TASK_READER = False
+    content = models.JSONField(blank=True, null=True, default=None, help_text='All note content for this note session')
 
     @property
     def create_url(self):
@@ -229,6 +229,12 @@ class NotesData(BaseData):
     def __str__(self):
         return f"Note: {self.name}"
 
+    def get_content(self):
+        return self.content
+
+    def set_content(self, delta):
+        self.content = delta
+        self.save()
 
 class SSHData(BaseData):
     CACHED_CREDENTIALS = False

@@ -71,10 +71,13 @@ def closing_shared_tabs(sender, instance, **kwargs):
 
     for session in related_sessions:
         message = {
-            'type': 'group_message_inclusive',
+            'type': 'group_message',
             'message': {
                 'type': 'action',
-                'content': {'type': 'del_tab', 'session_id': session.id}
+                'content': {'type': 'del_tab', 'session_id': session.id},
+                'to_myself': False,
+                'exclusive': False,
+                'sender_channel_name': None
             }
         }
         async_to_sync(channel_layer.group_send)(str(instance.id), message)
