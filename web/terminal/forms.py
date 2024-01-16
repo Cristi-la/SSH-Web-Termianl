@@ -12,7 +12,6 @@ class SSHDataForm(TerminalBaseForm):
 
     )
 
-
     hostname = forms.CharField(max_length=255, required=False, help_text='The hostname of the host.')
     ip = forms.GenericIPAddressField(required=False, help_text='The IP address of the saved host.')
     port = forms.IntegerField(initial=22, help_text='The port number for accessing the host.')

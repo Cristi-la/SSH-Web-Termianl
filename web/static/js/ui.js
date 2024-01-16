@@ -552,6 +552,7 @@ function openElementsForSaveSessions(saved_sessions_id) {
   let session = getSession(session_id)
   addElementsForSession(session)
   chooseElementForSession(session_id)
+  console.error('TEST', session_id, saved_sessions_id)
 }
 
 
@@ -649,6 +650,7 @@ const main_terminal = async ( ) => {
     closeOffCanvas();
     session_list.push(session)
     addElementsForSession(session)
+    chooseElementForSession(session.pk)
   });
 
   document.getElementById('shareSession').addEventListener('click', function(e) {
@@ -667,7 +669,7 @@ const main_terminal = async ( ) => {
 
   const urlParams = new URLSearchParams(window.location.search);
   const selectValue = urlParams.get('select');
-  if (session_list.includes(selectValue)) chooseElementForSession(selectValue)
+  chooseElementForSession(selectValue)
 }
 
 window.addEventListener('load', main_terminal)

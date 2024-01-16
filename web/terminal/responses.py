@@ -82,3 +82,9 @@ SESSION_ALREADY_JOINED = BaseApiCallReponse(
 ).to_json_response()
 
 
+NO_PERMISSIONS = BaseApiCallReponse(
+    success=False,
+    message='You have locked access to this functionality. Please contact administrator to recive access to this feature!!',
+    status = 403 # HTTP status code for Bad Request
+).to_json_response()
+
