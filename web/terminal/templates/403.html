@@ -18,24 +18,25 @@
         {% component "Logo" url=False %}
     </div>
 
-    {% if not perms.terminal.USE_SSH  and not perms.terminal.USE_NOTE %}
-    This account have locked access to use ssh/note functionalities. Please contact app administrator to receive access to specific functionalities.
-    
-    {% else %}
 
-        <h4 class="h4 mb-3 fw-normal" style="color:var(--slate-400)">Please choose window type</h4>
-
-        {% if perms.terminal.USE_SSH %}
-        <a href="{% url 'ssh.create' %}" class="w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">SSH session</a>
-        {% endif %}
-        {% if perms.terminal.USE_NOTE %}
-        <a href="{% url 'note.create' %}" class="w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">Note session</a>
-        {% endif %}
-
-
-
-    {% endif %}
-
+                                           \ / _
+                                      ___,,,
+                                      \_[o o]
+     Errare humanum est!              C\  _\/
+             /                     _____),_/__
+        ________                  /     \/   /
+      _|       .|                /      o   /
+     | |       .|               /          /
+      \|       .|              /          /
+       |________|             /_        \/
+       __|___|__             _//\        \
+ _____|_________|____       \  \ \        \
+                    _|       ///  \        \
+                   |               \       /
+                   |               /      /
+                   |              /      /
+ ________________  |             /__    /_
+ b'ger        ...|_|.............. /______\.......
 
     <button id="close" data-session-id="create" class="mt-4 w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">
         Close

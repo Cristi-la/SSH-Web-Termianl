@@ -1,10 +1,9 @@
 from typing import Any
 from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, RedirectView
 from terminal.models import SSHData, NotesData, SessionsList, SavedHost, AccountData, BaseData
-from django.shortcuts import render, redirect
 from terminal.forms import SSHDataForm, ReconnectForm
 from django.urls import reverse, reverse_lazy
 from web.templates import TemplateSession, TemplateCreateSession, decoded_data
@@ -12,8 +11,9 @@ from django.shortcuts import get_object_or_404
 from terminal.responses import (
     SESSION_CLOSED, SESSION_UPDATED, ALL_SESSION_CLOSED, SAVED_SESSION_CLOSED, 
     NO_MANDATORY_PARAMS, SESSION_SHARING_DISABLED, NO_SESSION_JOIN,
-    SESSION_ALREADY_JOINED
+    SESSION_ALREADY_JOINED, NO_PERMISSIONS
 )
+from django.template import RequestContext
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -28,6 +28,7 @@ from django.utils.decorators import method_decorator
 class SSHDetailView(TemplateSession):
     template_name  = 'views/terminals/ssh.html'
     model = SSHData
+    permission_required = SSHData.get_access_permission()
 
     def get_additional_context(self,  *args, **kwargs):
         context = super().get_additional_context(*args, **kwargs)
@@ -40,6 +41,7 @@ class SSHDetailView(TemplateSession):
 class SSHCreateView(TemplateCreateSession): #DONE
     model = SSHData  
     queryset = SSHData.objects.none()
+    permission_required = SSHData.get_access_permission()
     form_class = SSHDataForm
     prompt = 'Create SSH session'
 
@@ -57,8 +59,10 @@ class NoteDetailView(TemplateSession):
     template_name  = 'views/terminals/note.html'
     model = NotesData
     context_object_name = 'notedata'
+    permission_required = NotesData.get_access_permission()
 
 class NoteCreateView(TemplateCreateSession):
+    permission_required = NotesData.get_access_permission()
     model = NotesData  
     queryset = NotesData.objects.none()
     prompt = 'Create Note'
@@ -129,9 +133,11 @@ class TermianlView(LoginRequiredMixin, TemplateView):
 
             session, created = SessionsList.joinWithOutContext(user=user, session_key=session_key)
 
-            if not session:
+            if not session and created:
+                return NO_PERMISSIONS
+            elif not session and not created:
                 return NO_SESSION_JOIN
-            elif not created:
+            elif not session and not created:
                 return SESSION_ALREADY_JOINED
 
             return JsonResponse({'session':  session.get_session_dict(user)}, status=200)
@@ -184,18 +190,18 @@ class TerminalJoinView(RedirectView):
 
         session, created = SessionsList.joinWithOutContext(user=user, session_key=session_key)
 
-        if not session:
+        if not session and created:
+            messages.error(self.request, 'You have locked access to this functionality. Please contact administrator to recive access to this feature!!')
+            return self.get_redirect_url(*args, **kwargs)
+        elif not session and not created:
             messages.error(self.request, 'Wrong url!!')
             return self.get_redirect_url(*args, **kwargs)
-        else:
-            base_url = f'{reverse(self.pattern_name)}?select={session.pk}'
-
-        if not created:
+        elif  session and not created:
             messages.error(self.request, 'Session already joined!')
-        else:
+        elif session and created:
             messages.success(self.request, 'Session joined!')
 
-        return base_url
+        return f'{reverse(self.pattern_name)}?select={session.pk}'
 
 
 class LoginView(TemplateView):
@@ -256,3 +262,20 @@ class LogoutView(LoginRequiredMixin, RedirectView):
         return super().get(request, *args, **kwargs)    
 
 
+
+def handler403(request, *args, **argv):
+    response = render(request, '403.html', {})
+    response.status_code = 403
+    return response
+
+
+def handler404(request, *args, **argv):
+    response = render(request, '404.html', {})
+    response.status_code = 404
+    return response
+
+
+def handler500(request, *args, **argv):
+    response = render(request,'500.html', {})
+    response.status_code = 500
+    return response

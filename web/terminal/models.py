@@ -15,6 +15,8 @@ from functools import wraps
 from terminal.errors import ReconnectRequired
 import secrets
 from web.settings import COLOR_PALETTE
+from django.core.exceptions import ImproperlyConfigured
+from terminal.apps import TerminalConfig
 
 def strip_object(data: dict):
     return  {k: str(v).strip() if v else None for k, v in data.items()}
@@ -162,6 +164,7 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
     def close(self, *args, **kwargs) -> None:
         self.delete()
 
+
     @classmethod
     @strip_args('name')
     def open(cls, user, name, session_open, color, *args, **kwargs) -> list[Self, 'SessionsList']:
@@ -212,6 +215,12 @@ class BaseData(models.Model, metaclass=AbstractModelMeta):
             setattr(self, key, value)
         self.save()
 
+    @classmethod
+    def get_access_permission(cls):
+        try:
+            return f'{TerminalConfig.name}.{cls._meta.permissions[0][0]}'
+        except Exception as e:
+            raise ImproperlyConfigured(f"The Data session model is not set up correctly.: {e}")
 
 
 class NotesData(BaseData):
@@ -228,6 +237,12 @@ class NotesData(BaseData):
 
     def __str__(self):
         return f"Note: {self.name}"
+    
+    class Meta:
+        permissions = [
+            ("USE_NOTE", "This permission give user ability to use notes funcjonality"),
+        ]
+
 
     def get_content(self):
         return self.content
@@ -423,6 +438,11 @@ class SSHData(BaseData):
                               passphrase=passphrase, cache_key=ssh_data.pk)
 
         return ssh_data, session
+    
+    class Meta:
+        permissions = [
+            ("USE_SSH", "This permission give user ability to use SSH funcjonality"),
+        ]
 
 class SessionsList(models.Model):
     name = models.CharField(max_length=100, default='Session', help_text='Name of the tab in fronend.')
@@ -464,8 +484,12 @@ class SessionsList(models.Model):
     @classmethod
     def joinWithOutContext(cls, user, session_key):
         other_session =  SessionsList.get_session_from_key(session_key)
-
+        
         if other_session:
+            if not user.has_perm(other_session.content_object.get_access_permission()):
+                return None, True
+
+        
             return SessionsList._join(
                 user=user,
                 data_obj = other_session.content_object,

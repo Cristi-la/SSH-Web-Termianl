@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-l0=n6tz%4v!pu%d@y-yva+(rei-3qe%n3ocen%rn%x@v(e--r=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -172,11 +172,11 @@ CHANNEL_LAYERS = {
 MAX_SSH_SESSIONS = 100 # DZIAŁA
 MAX_NOTE_SESSIONS = 100 # DZIAŁA
 
-MAX_USER_SSH_SESSIONS = 64 # DZIAŁA
-MAX_USER_NOTE_SESSIONS = 64 # DZIAŁA
+MAX_USER_SSH_SESSIONS = 2 # DZIAŁA
+MAX_USER_NOTE_SESSIONS = 2 # DZIAŁA
 
-MAX_SSH_SHARING = 6 # DZIAŁA
-MAX_NOTE_SHARING = 6 # DZIAŁA
+MAX_SSH_SHARING = 1 # DZIAŁA
+MAX_NOTE_SHARING = 1 # DZIAŁA
 
 CACHES = {
     'default': {
@@ -193,3 +193,6 @@ COLOR_PALETTE = [
     ("#BD2DB6", "Steel Pink", ),
     ("#E0A61E", "Harvest Gold", ),
 ]
+
+LOGIN_URL = 'login/'
+LOGIN_REDIRECT_URL = 'terminal/'

@@ -16,6 +16,7 @@ import json
 from web.settings import COLOR_PALETTE
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 class CustomRadioSelect(forms.RadioSelect):
     template_name = 'terminal/custom/color_radio.html'  # Create a custom template
@@ -47,7 +48,7 @@ class TerminalBaseForm(forms.Form):
         return mark_safe(" ".join(self.buttons))
 
     name = forms.CharField(max_length=100, required=True, label="Session name", initial='New Session')
-    session_open = forms.BooleanField(initial=False, required=False, help_text='This flags informs if other users can join this session')
+    session_open = forms.BooleanField(initial=False, required=False, label="Tab color", help_text='This flags informs if other users can join this session')
     color = forms.ChoiceField(
         choices=COLOR_PALETTE,
         widget=CustomRadioSelect,
@@ -62,7 +63,7 @@ class TerminalBaseForm(forms.Form):
         return super().clean()
 
 
-class TemplateSession(ABC, SessionPermissionMixin, DetailView):
+class TemplateSession(PermissionRequiredMixin, ABC, SessionPermissionMixin, DetailView):
     http_method_names: tuple[str] = ('patch','post', 'get', 'delete')
     template_name: str
     model: BaseData
@@ -176,7 +177,7 @@ class TemplateSession(ABC, SessionPermissionMixin, DetailView):
             status = 200 
         ).to_json_response()
 
-class TemplateCreateSession(ABC, LoginRequiredMixin, CreateView):
+class TemplateCreateSession(PermissionRequiredMixin, ABC, LoginRequiredMixin, CreateView):
     template_name: str = 'views/form.html'
     http_method_names: tuple[str] = ('get','post',)
     model: BaseData = BaseData  

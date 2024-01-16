@@ -26,7 +26,7 @@
                 <li>
                     <button class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight" style="color: var(--slate-400)">
                         <img class="align-top px-1" src="{% static 'images/saved.svg' %}" />
-                        My sessions
+                        My saved hosts
                     </button>
                 </li>
                 {% if user.is_staff or user.is_superuser %}
@@ -63,7 +63,7 @@
     <div class="modal-dialog show">
       <div class="modal-content bg-dark" style="min-height: 200px">
         <div class="modal-header">
-          <h5 class="modal-title" id="staticBackdropLabel">Session center</h5>
+          <h5 class="modal-title" id="staticBackdropLabel">Sharing center</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body text-center d-flex justify-content-center align-content-center flex-column" id="sessionkey">
@@ -81,28 +81,38 @@
 <div class="offcanvas offcanvas-end bg-dark" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
     <div class="offcanvas-header text-center" style="color: var(--slate-400); background-color: var(--slate-600);">
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        <h5 id="offcanvasRightLabel" class="m-0">My Saved sessions</h5>
+        <h5 id="offcanvasRightLabel" class="m-0">My Saved hosts</h5>
     </div>
     <div class="offcanvas-body">
         <form>
             <div class="input-group mb-3">
-                <input type="text" id="search-accordion" class="form-control" style="background-color: #3d444a !important" placeholder="Session name/ip/hostname" aria-label="Session name/ip" aria-describedby="button-addon2">
+                <input type="text" id="search-accordion" class="form-control" style="background-color: #3d444a !important" placeholder="Session name/ip/hostname" aria-label="Session name/ip" aria-describedby="button-addon2" {% if not perms.terminal.USE_SSH %}disabled{% endif %}>
                 <button class="btn btn-dark bg-sky-800" type="button" id="button-addon2">Auto Search</button>
             </div>
         </form>
         <div class="h-100 w-100 verflow-auto">
-
             <div class="accordion accordion-flush bg-dark" id="accordionFlush">
             </div>
 
+            
+
+            {% if not perms.terminal.USE_SSH %}
+            <div class="text-center w-100 text-danger p-2">This account have locked access to saved session functionalities. Please contact app administrator to receive access to specific functionalities.</div>
+            {% endif %}
+
             <hr />
+
+            {% if perms.terminal.USE_SSH or perms.terminal.USE_NOTE %}
             <div class="text-center">
-                Use the form below to join open session:
+                Use the form below to join session:
                 <div class="input-group my-3">
                     <input type="password" id="joinSessionInput" class="form-control" style="background-color: #3d444a !important" placeholder="Session key" aria-label="Session key" aria-describedby="button-addon4">
                     <button class="btn btn-dark bg-sky-700" id="joinSessionBtn" type="button" id="button-addon4">Join</button>
                 </div>
             </div>
+            {% endif %}
+            
+
         </div>
     </div>
 </div>
