@@ -13,13 +13,11 @@
 
 
 {% block content %}
+
 <main style="z-index: 10" class="form-signin text-center">
     <div class="p-3 text-center">
-        {% component "Logo" url=False %}
-    </div>
-
-
-                                           \ / _
+        <pre style="font-size:75%; overflow: visible">
+                                                   \ / _
                                       ___,,,
                                       \_[o o]
      Errare humanum est!              C\  _\/
@@ -37,18 +35,22 @@
                    |              /      /
  ________________  |             /__    /_
  b'ger        ...|_|.............. /______\.......
+        </pre>
 
+        <h1>Error 403</h1>
+    </div>
     <button id="close" data-session-id="create" class="mt-4 w-100 btn btn-lg btn-dark mb-2 rounded-pill border-slate-700 bg-slate-800" type="submit">
         Close
     </button>
-
 </main>
+
 
 
 <script>
     window.addEventListener("load", (e) => {
         document.getElementById('close').addEventListener('click', (e) => {
             id = e.target.getAttribute('data-session-id')
+            window.location.href = '/'
 
             if (id) emitCloseEvent(id)
         });
