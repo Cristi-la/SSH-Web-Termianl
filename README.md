@@ -4,21 +4,18 @@
 
 ### Prerequisites
 
-    - Python >3.11
-    - Redis >7.2 (Memurial – Redis DB for Windows - Version. 4.1.0. 4.1.0)
+- Python >3.11
+- Redis >7.2 (Memurial – Redis DB for Windows - Version. 4.1.0. 4.1.0)
 
-Installation
+## Installation
 
-    Clone the repository:
-
-    
+Clone the repository: 
 ```bash
 git clone https://github.com/Cristi-la/webterminal
 cd webterminal/web
 ```
 
 Install dependencies using pip and the provided requirements.txt file:
-
 ```bash
 pip install -r requirements.txt 
 ```
