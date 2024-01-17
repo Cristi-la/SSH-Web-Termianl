@@ -31,7 +31,7 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-2. Create a superuser (if needed):
+2. Create a superuser:
 
 ```bash
 python manage.py createsuperuser
