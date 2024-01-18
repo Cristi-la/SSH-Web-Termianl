@@ -48,8 +48,9 @@ class TerminalBaseForm(forms.Form):
         return mark_safe(" ".join(self.buttons))
 
     name = forms.CharField(max_length=100, required=True, label="Session name", initial='New Session')
-    session_open = forms.BooleanField(initial=False, required=False, label="Tab color", help_text='This flags informs if other users can join this session')
+    session_open = forms.BooleanField(initial=False, required=False, help_text='This flags informs if other users can join this session')
     color = forms.ChoiceField(
+        label="Tab color",
         choices=COLOR_PALETTE,
         widget=CustomRadioSelect,
         required=False
