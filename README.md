@@ -67,6 +67,9 @@ Make sure you have Redis installed, as the project relies on it. You can downloa
 ![reconect](img/4.png)
 
 
+### License
+All rights reserved. Use without permission strictly prohibited.
+
 
 
 
