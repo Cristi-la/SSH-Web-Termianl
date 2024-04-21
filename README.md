@@ -5,7 +5,7 @@
 ### Prerequisites
 
 - Python >3.11
-- Redis >7.2 (Memurial – Redis DB for Windows - Version. 4.1.0. 4.1.0)
+- Redis >7.2 (Memurai – Redis DB for Windows - Version. 4.1.0. 4.1.0)
 
 ## Installation
 
